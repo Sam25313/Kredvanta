@@ -1,0 +1,533 @@
+﻿@using static Kredvanta.Models.Enums.LendingEnums
+@model Kredvanta.ViewModels.LoanApplications.LoanApplicationDetailsViewModel
+
+@{
+    ViewData["Title"] = "Loan Application Details";
+
+    var statusClass = Model.Status switch
+    {
+        LoanApplicationStatus.Draft => "bg-secondary",
+        LoanApplicationStatus.Submitted => "bg-primary",
+        LoanApplicationStatus.UnderReview => "bg-info text-dark",
+        LoanApplicationStatus.DocumentsRequired => "bg-warning text-dark",
+        LoanApplicationStatus.Recommended => "bg-info text-dark",
+        LoanApplicationStatus.Approved => "bg-success",
+        LoanApplicationStatus.Rejected => "bg-danger",
+        LoanApplicationStatus.Cancelled => "bg-dark",
+        _ => "bg-secondary"
+    };
+
+    bool canUploadDocuments =
+        Model.Status == LoanApplicationStatus.Draft ||
+        Model.Status == LoanApplicationStatus.DocumentsRequired;
+}
+
+<div class="container-fluid py-4">
+
+    <!-- Page Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Loan Application Details</h2>
+            <p class="text-muted mb-0">
+                Review your application information and supporting documents.
+            </p>
+        </div>
+
+        <a asp-controller="LoanApplications"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Applications
+        </a>
+    </div>
+
+    <!-- Notifications -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            @TempData["Warning"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Application Overview -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+
+            <div class="d-flex flex-wrap justify-content-between align-items-start mb-4">
+                <div>
+                    <span class="text-muted small">APPLICATION NUMBER</span>
+                    <h4 class="fw-bold mb-1">@Model.ApplicationNumber</h4>
+
+                    <span class="text-muted">
+                        Created on @Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                    </span>
+                </div>
+
+                <div class="mt-2 mt-md-0">
+                    <span class="badge @statusClass fs-6 px-3 py-2">
+                        @Model.Status.ToString()
+                    </span>
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="row g-4">
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="text-muted small mb-1">Loan Product</div>
+                    <div class="fw-semibold">@Model.LoanProductName</div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="text-muted small mb-1">Requested Amount</div>
+                    <div class="fw-semibold">
+                        KES @Model.RequestedAmount.ToString("N2")
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="text-muted small mb-1">Repayment Term</div>
+                    <div class="fw-semibold">
+                        @Model.RequestedTermPeriods periods
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="text-muted small mb-1">Submitted On</div>
+                    <div class="fw-semibold">
+                        @(Model.SubmittedAt.HasValue
+                            ? Model.SubmittedAt.Value.ToLocalTime().ToString("dd MMM yyyy")
+                            : "Not yet submitted")
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="mt-4">
+                <div class="text-muted small mb-1">Loan Purpose</div>
+                <p class="mb-0">@Model.LoanPurpose</p>
+            </div>
+
+            @if (Model.DecisionAt.HasValue)
+            {
+                <div class="mt-3">
+                    <div class="text-muted small mb-1">Decision Date</div>
+                    <div class="fw-semibold">
+                        @Model.DecisionAt.Value.ToLocalTime().ToString("dd MMM yyyy")
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <!-- Application Actions -->
+    @if (canUploadDocuments)
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+
+                    <div>
+                        <h5 class="fw-bold mb-1">Application Actions</h5>
+
+                        <p class="text-muted mb-0">
+                            @if (Model.Status == LoanApplicationStatus.Draft)
+                            {
+                                <span>
+                                    Your application is still a draft. You can upload
+                                    supporting documents or submit it for processing.
+                                </span>
+                            }
+                            else
+                            {
+                                <span>
+                                    Upload outstanding or replacement documents to
+                                    complete your application requirements.
+                                </span>
+                            }
+                        </p>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+
+                        <a asp-controller="LoanApplicationDocuments"
+                           asp-action="Upload"
+                           asp-route-applicationId="@Model.Id"
+                           class="btn btn-outline-primary">
+                            <i class="bi bi-cloud-arrow-up me-1"></i>
+                            Upload Document
+                        </a>
+
+                        @if (Model.Status == LoanApplicationStatus.Draft)
+                        {
+                            <form asp-controller="LoanApplications"
+                                  asp-action="Submit"
+                                  asp-route-id="@Model.Id"
+                                  method="post"
+                                  onsubmit="return confirm('Are you sure you want to submit this loan application?');">
+
+                                @Html.AntiForgeryToken()
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send me-1"></i>
+                                    Submit Application
+                                </button>
+                            </form>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Required Documents -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-1">
+                <i class="bi bi-folder-check me-2"></i>
+                Required Documents
+            </h5>
+
+            <p class="text-muted small mb-0">
+                Track the documents required for this loan product.
+            </p>
+        </div>
+
+        <div class="card-body p-0">
+
+            @if (Model.RequiredDocuments.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Document</th>
+                                <th>Requirement</th>
+                                <th>Upload Status</th>
+                                <th>Review Status</th>
+                                <th class="pe-4">Uploaded On</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var document in Model.RequiredDocuments)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-semibold">
+                                            @document.DocumentName
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(document.Description))
+                                        {
+                                            <small class="text-muted">
+                                                @document.Description
+                                            </small>
+                                        }
+
+                                        @if (document.RequiredPeriodMonths.HasValue)
+                                        {
+                                            <div class="small text-muted">
+                                                Coverage period:
+                                                @document.RequiredPeriodMonths months
+                                            </div>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @if (document.IsMandatory)
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger">
+                                                Mandatory
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary">
+                                                Optional
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @if (document.IsUploaded)
+                                        {
+                                            <span class="text-success">
+                                                <i class="bi bi-check-circle-fill me-1"></i>
+                                                Uploaded
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger">
+                                                <i class="bi bi-exclamation-circle me-1"></i>
+                                                Not uploaded
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @if (!document.IsUploaded)
+                                        {
+                                            <span class="text-muted">Not available</span>
+                                        }
+                                        else if (document.ReviewStatus == DocumentReviewStatus.Verified)
+                                        {
+                                            <span class="badge bg-success">
+                                                Verified
+                                            </span>
+                                        }
+                                        else if (document.ReviewStatus == DocumentReviewStatus.Pending)
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                Pending Review
+                                            </span>
+                                        }
+                                        else if (document.ReviewStatus == DocumentReviewStatus.Rejected)
+                                        {
+                                            <span class="badge bg-danger">
+                                                Rejected
+                                            </span>
+                                        }
+                                        else if (document.ReviewStatus == DocumentReviewStatus.ClarificationRequired)
+                                        {
+                                            <span class="badge bg-info text-dark">
+                                                Clarification Required
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td class="pe-4">
+                                        @(document.UploadedAt.HasValue
+                                            ? document.UploadedAt.Value.ToLocalTime().ToString("dd MMM yyyy")
+                                            : "—")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-folder2-open display-5 text-muted"></i>
+                    <p class="text-muted mt-2 mb-0">
+                        No document requirements have been configured for this loan product.
+                    </p>
+                </div>
+            }
+
+        </div>
+
+        @if (Model.RequiredDocuments.Any())
+        {
+            var mandatoryCount = Model.RequiredDocuments.Count(d => d.IsMandatory);
+            var satisfiedCount = Model.RequiredDocuments.Count(d => d.IsMandatory && d.IsSatisfied);
+
+            <div class="card-footer bg-white p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small">Mandatory document progress</span>
+                    <strong>@satisfiedCount of @mandatoryCount satisfied</strong>
+                </div>
+
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar"
+                         role="progressbar"
+                         style="width: @(mandatoryCount == 0 ? 100 : (satisfiedCount * 100 / mandatoryCount))%"
+                         aria-valuenow="@(mandatoryCount == 0 ? 100 : (satisfiedCount * 100 / mandatoryCount))"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                    </div>
+                </div>
+
+                <small class="text-muted d-block mt-2">
+                    A document marked Pending Review has been uploaded but has not yet been verified.
+                </small>
+            </div>
+        }
+    </div>
+
+    <!-- Uploaded Documents -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-1">
+                <i class="bi bi-file-earmark-text me-2"></i>
+                Uploaded Documents
+            </h5>
+
+            <p class="text-muted small mb-0">
+                Documents attached to this loan application.
+            </p>
+        </div>
+
+        <div class="card-body p-0">
+
+            @if (Model.Documents.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">File Name</th>
+                                <th>Document Type</th>
+                                <th>Review Status</th>
+                                <th>Uploaded On</th>
+                                <th class="pe-4">Review Comments</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var document in Model.Documents)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                        @document.OriginalFileName
+                                    </td>
+
+                                    <td>
+                                        @document.RequiredDocumentName
+                                    </td>
+
+                                    <td>
+                                        @switch (document.ReviewStatus)
+                                        {
+                                            case DocumentReviewStatus.Pending:
+                                                <span class="badge bg-warning text-dark">Pending Review</span>
+                                                break;
+
+                                            case DocumentReviewStatus.Verified:
+                                                <span class="badge bg-success">Verified</span>
+                                                break;
+
+                                            case DocumentReviewStatus.Rejected:
+                                                <span class="badge bg-danger">Rejected</span>
+                                                break;
+
+                                            case DocumentReviewStatus.ClarificationRequired:
+                                                <span class="badge bg-info text-dark">Clarification Required</span>
+                                                break;
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @document.UploadedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                    </td>
+
+                                    <td class="pe-4">
+                                        @(string.IsNullOrWhiteSpace(document.ReviewComments)
+                                            ? "—"
+                                            : document.ReviewComments)
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-file-earmark-x display-5 text-muted"></i>
+                    <p class="text-muted mt-2 mb-0">
+                        You have not uploaded any supporting documents yet.
+                    </p>
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <!-- Application History -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-1">
+                <i class="bi bi-clock-history me-2"></i>
+                Application History
+            </h5>
+
+            <p class="text-muted small mb-0">
+                Track important events and status changes.
+            </p>
+        </div>
+
+        <div class="card-body">
+
+            @if (Model.History.Any())
+            {
+                <div class="list-group list-group-flush">
+
+                    @foreach (var item in Model.History)
+                    {
+                        <div class="list-group-item px-0 py-3">
+                            <div class="d-flex justify-content-between flex-wrap gap-2">
+
+                                <div>
+                                    <div class="fw-semibold">
+                                        @if (item.PreviousStatus.HasValue)
+                                        {
+                                            <span>@item.PreviousStatus.Value</span>
+                                            <i class="bi bi-arrow-right mx-2 text-muted"></i>
+                                        }
+
+                                        <span>@item.NewStatus</span>
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                    {
+                                        <p class="text-muted small mb-1 mt-1">
+                                            @item.Notes
+                                        </p>
+                                    }
+
+                                    <small class="text-muted">
+                                        Changed by: @(item.ChangedByName ?? "System")
+                                    </small>
+                                </div>
+
+                                <small class="text-muted">
+                                    @item.ChangedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")
+                                </small>
+
+                            </div>
+                        </div>
+                    }
+
+                </div>
+            }
+            else
+            {
+                <p class="text-muted text-center py-3 mb-0">
+                    No application history is available.
+                </p>
+            }
+
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,285 @@
+﻿@using Kredvanta.Models.Products
+@model IEnumerable<LoanProduct>
+
+@{
+    ViewData["Title"] = "Available Loan Products";
+    Layout = "_Layout";
+}
+
+<style>
+    :root {
+        --kred-navy: #101d36;
+        --kred-orange: #f58220;
+        --kred-light: #f5f7fb;
+    }
+
+    .loans-page {
+        background: var(--kred-light);
+        min-height: 100vh;
+        padding: 35px 0 60px;
+    }
+
+    .loans-hero {
+        background: linear-gradient(120deg, #101d36, #243c63);
+        color: white;
+        border-radius: 18px;
+        padding: 38px;
+        margin-bottom: 32px;
+    }
+
+    .loans-hero .accent {
+        color: var(--kred-orange);
+    }
+
+    .product-card {
+        background: white;
+        border: 1px solid #e9edf3;
+        border-radius: 16px;
+        height: 100%;
+        transition: transform .2s ease, box-shadow .2s ease;
+        overflow: hidden;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 28px rgba(16, 29, 54, .10);
+    }
+
+    .product-card-top {
+        padding: 24px 24px 12px;
+    }
+
+    .product-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff1e5;
+        color: var(--kred-orange);
+        font-size: 23px;
+        margin-bottom: 18px;
+    }
+
+    .product-code {
+        color: #778397;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .7px;
+    }
+
+    .product-name {
+        color: var(--kred-navy);
+        font-weight: 750;
+        font-size: 21px;
+    }
+
+    .product-description {
+        color: #68758a;
+        font-size: 14px;
+        min-height: 48px;
+    }
+
+    .product-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        padding: 20px 24px;
+        border-top: 1px solid #edf0f5;
+        border-bottom: 1px solid #edf0f5;
+    }
+
+    .stat-label {
+        color: #8490a2;
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+
+    .stat-value {
+        color: var(--kred-navy);
+        font-weight: 700;
+        font-size: 15px;
+    }
+
+    .product-card-bottom {
+        padding: 20px 24px 24px;
+    }
+
+    .btn-kred {
+        background: var(--kred-orange);
+        border: 1px solid var(--kred-orange);
+        color: white;
+        font-weight: 650;
+        border-radius: 9px;
+        padding: 11px 18px;
+    }
+
+    .btn-kred:hover {
+        background: #df6e12;
+        border-color: #df6e12;
+        color: white;
+    }
+
+    .empty-state {
+        background: white;
+        border-radius: 16px;
+        padding: 55px 25px;
+        text-align: center;
+    }
+
+    @@media(max-width: 576px) {
+        .loans-hero {
+            padding: 25px;
+        }
+    }
+</style>
+
+<div class="loans-page">
+    <div class="container">
+
+        <div class="loans-hero">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <span class="badge bg-light text-dark mb-3">
+                        KREDVANTA LOAN MARKETPLACE
+                    </span>
+
+                    <h1 class="fw-bold mb-3">
+                        Find the right loan for <span class="accent">your needs.</span>
+                    </h1>
+
+                    <p class="mb-0 text-white-50">
+                        Explore our available loan products, compare their
+                        terms and choose an option that works for you.
+                    </p>
+                </div>
+
+                <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
+                    <div class="fs-1 fw-bold">
+                        @Model.Count()
+                    </div>
+                    <div class="text-white-50">
+                        Available loan products
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1" style="color:#101d36;">
+                    Explore Loan Products
+                </h3>
+                <p class="text-muted mb-0">
+                    Select a product to see its full details and requirements.
+                </p>
+            </div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state shadow-sm">
+                <div class="fs-1 mb-3">📋</div>
+
+                <h4 class="fw-bold" style="color:#101d36;">
+                    No loan products available
+                </h4>
+
+                <p class="text-muted mb-0">
+                    There are currently no active loan products.
+                    Please check again later.
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+
+                @foreach (var product in Model)
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="product-card">
+
+                            <div class="product-card-top">
+
+                                <div class="product-icon">
+                                    <i class="bi bi-cash-stack"></i>
+                                </div>
+
+                                <div class="product-code mb-2">
+                                    @product.ProductCode
+                                </div>
+
+                                <h4 class="product-name">
+                                    @product.ProductName
+                                </h4>
+
+                                <p class="product-description">
+                                    @(string.IsNullOrWhiteSpace(product.Description)
+                                        ? "Explore the terms and conditions of this loan product."
+                                        : product.Description)
+                                </p>
+                            </div>
+
+                            <div class="product-stats">
+
+                                <div>
+                                    <div class="stat-label">Minimum Amount</div>
+                                    <div class="stat-value">
+                                        KES @product.MinimumAmount.ToString("N0")
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="stat-label">Maximum Amount</div>
+                                    <div class="stat-value">
+                                        KES @product.MaximumAmount.ToString("N0")
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="stat-label">Annual Interest</div>
+                                    <div class="stat-value">
+                                        @product.AnnualInterestRate%
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="stat-label">Repayment Frequency</div>
+                                    <div class="stat-value">
+                                        @product.RepaymentFrequency
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="product-card-bottom">
+
+                                <div class="small text-muted mb-3">
+                                    Loan term:
+                                    <strong>
+                                        @product.MinimumTermPeriods -
+                                        @product.MaximumTermPeriods periods
+                                    </strong>
+                                </div>
+
+                                <a asp-controller="AvailableLoans"
+                                   asp-action="Details"
+                                   asp-route-id="@product.Id"
+                                   class="btn btn-kred w-100">
+                                    View Product Details
+                                    <i class="bi bi-arrow-right ms-2"></i>
+                                </a>
+
+                            </div>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+</div>
+

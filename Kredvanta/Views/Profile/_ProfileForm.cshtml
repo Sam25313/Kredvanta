@@ -1,0 +1,552 @@
+﻿@model Kredvanta.ViewModels.Profile.CreateProfileViewModel
+
+@{
+    var formAction = ViewData["FormAction"]?.ToString() ?? "Create";
+    var buttonText = ViewData["ButtonText"]?.ToString() ?? "Save Profile";
+}
+
+<style>
+    .profile-form {
+        color: #334155;
+    }
+
+    .profile-section {
+        padding: 25px 0;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+        .profile-section:last-of-type {
+            border-bottom: 0;
+        }
+
+    .profile-section-title {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        margin-bottom: 22px;
+    }
+
+    .profile-section-icon {
+        width: 43px;
+        height: 43px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #CCFBF1;
+        color: #0F766E;
+        font-size: 19px;
+    }
+
+    .profile-section-title h5 {
+        color: #0F172A;
+        font-size: 16px;
+        font-weight: 750;
+        margin: 0 0 3px;
+    }
+
+    .profile-section-title p {
+        color: #64748B;
+        font-size: 12px;
+        margin: 0;
+    }
+
+    .profile-form .form-label {
+        color: #334155;
+        font-size: 13px;
+        font-weight: 650;
+        margin-bottom: 7px;
+    }
+
+    .profile-form .form-control,
+    .profile-form .form-select {
+        min-height: 46px;
+        border: 1px solid #CBD5E1;
+        border-radius: 9px;
+        font-size: 13px;
+        padding: 10px 13px;
+        color: #0F172A;
+    }
+
+    .profile-form textarea.form-control {
+        min-height: 90px;
+    }
+
+    .profile-form .form-control:focus,
+    .profile-form .form-select:focus {
+        border-color: #0D9488;
+        box-shadow: 0 0 0 3px rgba(13,148,136,.12);
+    }
+
+    .profile-form .form-control[readonly] {
+        background: #F1F5F9;
+        color: #64748B;
+    }
+
+    .profile-form .field-validation-error {
+        display: block;
+        color: #DC2626;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .profile-form .validation-summary-errors {
+        background: #FEF2F2;
+        border: 1px solid #FECACA;
+        border-radius: 9px;
+        color: #B91C1C;
+        padding: 14px 18px;
+        font-size: 13px;
+        margin-bottom: 20px;
+    }
+
+    .profile-form .validation-summary-valid {
+        display: none;
+    }
+
+    .profile-hint {
+        color: #64748B;
+        font-size: 11px;
+        margin-top: 5px;
+    }
+
+    .profile-notice {
+        display: flex;
+        gap: 12px;
+        padding: 17px;
+        border-radius: 11px;
+        background: #F0FDFA;
+        border: 1px solid #99F6E4;
+        margin: 24px 0;
+    }
+
+        .profile-notice i {
+            color: #0F766E;
+            font-size: 20px;
+        }
+
+        .profile-notice strong {
+            color: #134E4A;
+            font-size: 13px;
+        }
+
+        .profile-notice p {
+            color: #475569;
+            font-size: 12px;
+            margin: 4px 0 0;
+            line-height: 1.6;
+        }
+
+    .profile-submit {
+        background: #0F766E;
+        border: 1px solid #0F766E;
+        color: white;
+        border-radius: 9px;
+        padding: 12px 24px;
+        font-size: 13px;
+        font-weight: 750;
+    }
+
+        .profile-submit:hover {
+            background: #115E59;
+            border-color: #115E59;
+            color: white;
+        }
+
+    .profile-cancel {
+        color: #475569;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 650;
+    }
+
+        .profile-cancel:hover {
+            color: #0F766E;
+        }
+</style>
+
+<form asp-controller="Profile"
+      asp-action="@formAction"
+      method="post"
+      class="profile-form">
+
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <!-- PERSONAL INFORMATION -->
+    <section class="profile-section">
+
+        <div class="profile-section-title">
+            <div class="profile-section-icon">
+                <i class="bi bi-person-vcard"></i>
+            </div>
+            <div>
+                <h5>Personal Information</h5>
+                <p>Your official identification details</p>
+            </div>
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-4">
+                <label asp-for="FirstName" class="form-label"></label>
+                <input asp-for="FirstName" class="form-control" />
+                <span asp-validation-for="FirstName"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="MiddleName" class="form-label"></label>
+                <input asp-for="MiddleName" class="form-control" />
+                <span asp-validation-for="MiddleName"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="LastName" class="form-label"></label>
+                <input asp-for="LastName" class="form-control" />
+                <span asp-validation-for="LastName"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="DateOfBirth" class="form-label"></label>
+                <input asp-for="DateOfBirth"
+                       type="date"
+                       class="form-control" />
+                <span asp-validation-for="DateOfBirth"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Gender" class="form-label"></label>
+                <select asp-for="Gender"
+                        asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.LendingEnums.Gender>()"
+                        class="form-select">
+                    <option value="">Select gender</option>
+                </select>
+                <span asp-validation-for="Gender"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="NationalIdNumber" class="form-label"></label>
+                <input asp-for="NationalIdNumber" class="form-control" />
+                <span asp-validation-for="NationalIdNumber"></span>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CONTACT INFORMATION -->
+    <section class="profile-section">
+
+        <div class="profile-section-title">
+            <div class="profile-section-icon">
+                <i class="bi bi-telephone"></i>
+            </div>
+            <div>
+                <h5>Contact Information</h5>
+                <p>Your current contact details</p>
+            </div>
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label asp-for="PhoneNumber" class="form-label"></label>
+                <input asp-for="PhoneNumber" class="form-control" />
+                <span asp-validation-for="PhoneNumber"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="AlternativePhoneNumber" class="form-label"></label>
+                <input asp-for="AlternativePhoneNumber"
+                       class="form-control" />
+                <span asp-validation-for="AlternativePhoneNumber"></span>
+            </div>
+
+            <div class="col-md-12">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email"
+                       class="form-control"
+                       readonly />
+                <span asp-validation-for="Email"></span>
+                <div class="profile-hint">
+                    Your email is associated with your registered account.
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- RESIDENTIAL INFORMATION -->
+    <section class="profile-section">
+
+        <div class="profile-section-title">
+            <div class="profile-section-icon">
+                <i class="bi bi-geo-alt"></i>
+            </div>
+            <div>
+                <h5>Residential Information</h5>
+                <p>Where you currently live</p>
+            </div>
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label asp-for="County" class="form-label"></label>
+                <input asp-for="County" class="form-control" />
+                <span asp-validation-for="County"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="SubCounty" class="form-label"></label>
+                <input asp-for="SubCounty" class="form-control" />
+                <span asp-validation-for="SubCounty"></span>
+            </div>
+
+            <div class="col-md-12">
+                <label asp-for="PhysicalAddress" class="form-label"></label>
+                <textarea asp-for="PhysicalAddress"
+                          class="form-control"></textarea>
+                <span asp-validation-for="PhysicalAddress"></span>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- EMPLOYMENT INFORMATION -->
+    <section class="profile-section">
+
+        <div class="profile-section-title">
+            <div class="profile-section-icon">
+                <i class="bi bi-briefcase"></i>
+            </div>
+            <div>
+                <h5>Employment Information</h5>
+                <p>Details about your current employment</p>
+            </div>
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label asp-for="EmploymentType" class="form-label"></label>
+                <select asp-for="EmploymentType"
+                        asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.LendingEnums.EmploymentType>()"
+                        class="form-select">
+                    <option value="">Select employment type</option>
+                </select>
+                <span asp-validation-for="EmploymentType"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="EmployerOrBusinessName"
+                       class="form-label"></label>
+                <input asp-for="EmployerOrBusinessName"
+                       class="form-control" />
+                <span asp-validation-for="EmployerOrBusinessName"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Occupation" class="form-label"></label>
+                <input asp-for="Occupation" class="form-control"
+                       placeholder="e.g. Accountant, Teacher, Developer" />
+                <span asp-validation-for="Occupation"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="EmploymentContractType"
+                       class="form-label"></label>
+                <select asp-for="EmploymentContractType"
+                        asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.EmploymentContractType>()"
+                        class="form-select">
+                    <option value="">Select contract type</option>
+                </select>
+                <span asp-validation-for="EmploymentContractType"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="EmploymentStartDate"
+                       class="form-label"></label>
+                <input asp-for="EmploymentStartDate"
+                       type="date"
+                       class="form-control" />
+                <span asp-validation-for="EmploymentStartDate"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="EmploymentEndDate"
+                       class="form-label"></label>
+                <input asp-for="EmploymentEndDate"
+                       type="date"
+                       class="form-control" />
+                <span asp-validation-for="EmploymentEndDate"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="ProbationEndDate"
+                       class="form-label"></label>
+                <input asp-for="ProbationEndDate"
+                       type="date"
+                       class="form-control" />
+                <span asp-validation-for="ProbationEndDate"></span>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- EMPLOYER VERIFICATION -->
+    <section class="profile-section">
+
+        <div class="profile-section-title">
+            <div class="profile-section-icon">
+                <i class="bi bi-building-check"></i>
+            </div>
+            <div>
+                <h5>Employer Contact Information</h5>
+                <p>Information used for employment verification</p>
+            </div>
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label asp-for="EmployerContactPerson"
+                       class="form-label"></label>
+                <input asp-for="EmployerContactPerson"
+                       class="form-control" />
+                <span asp-validation-for="EmployerContactPerson"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="EmployerPhoneNumber"
+                       class="form-label"></label>
+                <input asp-for="EmployerPhoneNumber"
+                       class="form-control" />
+                <span asp-validation-for="EmployerPhoneNumber"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="EmployerEmail"
+                       class="form-label"></label>
+                <input asp-for="EmployerEmail"
+                       class="form-control" />
+                <span asp-validation-for="EmployerEmail"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="EmployerAddress"
+                       class="form-label"></label>
+                <input asp-for="EmployerAddress"
+                       class="form-control" />
+                <span asp-validation-for="EmployerAddress"></span>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- SALARY INFORMATION -->
+    <section class="profile-section">
+
+        <div class="profile-section-title">
+            <div class="profile-section-icon">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div>
+                <h5>Salary and Income</h5>
+                <p>Provide accurate details about your earnings</p>
+            </div>
+        </div>
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label asp-for="GrossMonthlySalary"
+                       class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">KES</span>
+                    <input asp-for="GrossMonthlySalary"
+                           type="number"
+                           min="0"
+                           step="0.01"
+                           class="form-control" />
+                </div>
+                <span asp-validation-for="GrossMonthlySalary"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="NetMonthlySalary"
+                       class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">KES</span>
+                    <input asp-for="NetMonthlySalary"
+                           type="number"
+                           min="0"
+                           step="0.01"
+                           class="form-control" />
+                </div>
+                <span asp-validation-for="NetMonthlySalary"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="MonthlyIncome"
+                       class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">KES</span>
+                    <input asp-for="MonthlyIncome"
+                           type="number"
+                           min="0"
+                           step="0.01"
+                           class="form-control" />
+                </div>
+                <span asp-validation-for="MonthlyIncome"></span>
+                <div class="profile-hint">
+                    Existing monthly income field retained for compatibility.
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="PayrollFrequency"
+                       class="form-label"></label>
+                <select asp-for="PayrollFrequency"
+                        asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.PayrollFrequency>()"
+                        class="form-select">
+                    <option value="">Select payroll frequency</option>
+                </select>
+                <span asp-validation-for="PayrollFrequency"></span>
+            </div>
+
+        </div>
+    </section>
+
+    <div class="profile-notice">
+        <i class="bi bi-shield-check"></i>
+        <div>
+            <strong>Your information is protected</strong>
+            <p>
+                Ensure your information is accurate and matches your
+                supporting documents. Kredvanta may use these details
+                during identity and employment verification.
+            </p>
+        </div>
+    </div>
+
+    <div class="d-flex flex-column flex-md-row
+        justify-content-between align-items-md-center gap-3 pt-3">
+
+        <a asp-controller="Profile"
+           asp-action="Index"
+           class="profile-cancel">
+            <i class="bi bi-arrow-left me-1"></i>
+            Cancel
+        </a>
+
+        <button type="submit" class="profile-submit">
+            @buttonText
+            <i class="bi bi-arrow-right ms-2"></i>
+        </button>
+
+    </div>
+
+</form>
+
+

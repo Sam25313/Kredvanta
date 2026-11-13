@@ -1,0 +1,115 @@
+﻿@{
+    var currentStep = ViewData["CurrentStep"] as int? ?? 1;
+
+    var steps = new[]
+    {
+        new { Number = 1, Title = "Personal Details", Icon = "bi-person-vcard" },
+        new { Number = 2, Title = "Contact & Residence", Icon = "bi-geo-alt" },
+        new { Number = 3, Title = "Employment & Income", Icon = "bi-briefcase" },
+        new { Number = 4, Title = "Review & Submit", Icon = "bi-clipboard-check" }
+    };
+}
+
+<style>
+    .profile-progress {
+        display: flex;
+        gap: 12px;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .profile-progress-item {
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+        position: relative;
+    }
+
+    .profile-progress-icon {
+        width: 39px;
+        height: 39px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 9px;
+        background: #F1F5F9;
+        color: #64748B;
+        font-size: 16px;
+        border: 1px solid #E2E8F0;
+    }
+
+    .profile-progress-item.completed .profile-progress-icon {
+        background: #CCFBF1;
+        color: #0F766E;
+        border-color: #99F6E4;
+    }
+
+    .profile-progress-item.active .profile-progress-icon {
+        background: #0F766E;
+        color: #FFFFFF;
+        border-color: #0F766E;
+        box-shadow: 0 0 0 4px #CCFBF1;
+    }
+
+    .profile-progress-title {
+        display: block;
+        color: #64748B;
+        font-size: 11px;
+        font-weight: 650;
+        line-height: 1.4;
+    }
+
+    .profile-progress-item.active .profile-progress-title,
+    .profile-progress-item.completed .profile-progress-title {
+        color: #0F766E;
+    }
+
+    @@media (max-width: 600px) {
+        .profile-progress {
+            gap: 5px;
+            padding: 15px 7px;
+        }
+
+        .profile-progress-icon {
+            width: 33px;
+            height: 33px;
+            font-size: 14px;
+        }
+
+        .profile-progress-title {
+            font-size: 9px;
+        }
+    }
+</style>
+
+<div class="profile-progress">
+    @foreach (var step in steps)
+    {
+        var status = step.Number < currentStep
+            ? "completed"
+            : step.Number == currentStep
+                ? "active"
+                : "";
+
+        <div class="profile-progress-item @status">
+            <div class="profile-progress-icon">
+                @if (step.Number < currentStep)
+                {
+                    <i class="bi bi-check-lg"></i>
+                }
+                else
+                {
+                    <i class="bi @step.Icon"></i>
+                }
+            </div>
+
+            <span class="profile-progress-title">
+                @step.Title
+            </span>
+        </div>
+    }
+</div>

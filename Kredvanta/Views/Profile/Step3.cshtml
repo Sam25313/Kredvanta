@@ -1,0 +1,425 @@
+﻿@model Kredvanta.ViewModels.Profile.CreateProfileViewModel
+
+@{
+    ViewData["Title"] = "Employment & Income Details";
+    ViewData["CurrentStep"] = 3;
+    Layout = "_Layout";
+}
+
+<style>
+    .onboarding-container {
+        max-width: 1050px;
+        margin: 35px auto;
+        padding: 0 15px;
+    }
+
+    .onboarding-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, .05);
+    }
+
+    .onboarding-header {
+        background: #10243a;
+        color: #fff;
+        padding: 28px 32px;
+    }
+
+        .onboarding-header h2 {
+            font-size: 23px;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .onboarding-header p {
+            color: #cbd5e1;
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+    .onboarding-body {
+        padding: 30px 32px;
+    }
+
+    .section-heading {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f766e;
+        margin: 24px 0 17px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+        .section-heading:first-child {
+            margin-top: 0;
+        }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 650;
+        color: #334155;
+        margin-bottom: 7px;
+    }
+
+    .form-control, .form-select {
+        min-height: 45px;
+        border-radius: 8px;
+        border-color: #cbd5e1;
+        font-size: 14px;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #0f766e;
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, .1);
+        }
+
+    .field-hint {
+        color: #64748b;
+        font-size: 11px;
+        margin-top: 5px;
+        line-height: 1.5;
+    }
+
+    .information-note {
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        border-radius: 9px;
+        padding: 14px 16px;
+        color: #115e59;
+        font-size: 13px;
+        margin-top: 25px;
+        line-height: 1.6;
+    }
+
+    .btn-primary-custom {
+        background: #0f766e;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 11px 24px;
+        font-size: 14px;
+        font-weight: 650;
+    }
+
+        .btn-primary-custom:hover {
+            background: #115e59;
+            color: #fff;
+        }
+
+    .btn-secondary-custom {
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 11px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .btn-secondary-custom:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+    @@media (max-width: 600px) {
+        .onboarding-header, .onboarding-body {
+            padding: 22px 18px;
+        }
+    }
+</style>
+
+<div class="onboarding-container">
+
+    <partial name="_ProfileProgress" />
+
+    <div class="onboarding-card">
+
+        <div class="onboarding-header">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-briefcase fs-4"></i>
+                <span class="small text-uppercase fw-semibold">
+                    Borrower Profile Registration
+                </span>
+            </div>
+
+            <h2>Employment & Income Details</h2>
+
+            <p>
+                Tell us about your employment, business activities and income.
+                This information helps Kredvanta understand your financial
+                circumstances during loan assessment.
+            </p>
+        </div>
+
+        <div class="onboarding-body">
+
+            <form asp-controller="Profile"
+                  asp-action="Step3"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly"
+                     class="alert alert-danger"
+                     role="alert"></div>
+
+                <h5 class="section-heading">
+                    <i class="bi bi-person-workspace me-2"></i>
+                    Employment Information
+                </h5>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label asp-for="EmploymentStatus" class="form-label">
+                            Employment Status <span class="text-danger">*</span>
+                        </label>
+
+                        <select asp-for="EmploymentStatus"
+                                class="form-select"
+                                asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.EmploymentStatus>()">
+                            <option value="">Select employment status</option>
+                        </select>
+
+                        <span asp-validation-for="EmploymentStatus"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Occupation" class="form-label">
+                            Occupation
+                        </label>
+
+                        <input asp-for="Occupation"
+                               class="form-control"
+                               placeholder="e.g. Teacher, Accountant, Trader" />
+
+                        <span asp-validation-for="Occupation"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="EmployerOrBusinessName"
+                               class="form-label">
+                            Employer / Business Name
+                        </label>
+
+                        <input asp-for="EmployerOrBusinessName"
+                               class="form-control"
+                               placeholder="Enter employer or business name" />
+
+                        <span asp-validation-for="EmployerOrBusinessName"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Industry" class="form-label">
+                            Industry / Business Sector
+                        </label>
+
+                        <input asp-for="Industry"
+                               class="form-control"
+                               placeholder="e.g. Education, Retail, Agriculture" />
+
+                        <span asp-validation-for="Industry"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="EmploymentContractType"
+                               class="form-label">
+                            Employment Contract Type
+                        </label>
+
+                        <select asp-for="EmploymentContractType"
+                                class="form-select"
+                                asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.EmploymentContractType>()">
+                            <option value="">Select contract type</option>
+                        </select>
+
+                        <span asp-validation-for="EmploymentContractType"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="EmploymentStartDate"
+                               class="form-label">
+                            Employment / Business Start Date
+                        </label>
+
+                        <input asp-for="EmploymentStartDate"
+                               type="date"
+                               class="form-control" />
+
+                        <span asp-validation-for="EmploymentStartDate"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="BusinessYearsInOperation"
+                               class="form-label">
+                            Years in Business
+                        </label>
+
+                        <input asp-for="BusinessYearsInOperation"
+                               type="number"
+                               min="0"
+                               max="100"
+                               class="form-control"
+                               placeholder="Enter number of years" />
+
+                        <span asp-validation-for="BusinessYearsInOperation"
+                              class="text-danger small"></span>
+
+                        <div class="field-hint">
+                            Complete this field if you operate your own business.
+                        </div>
+                    </div>
+
+                </div>
+
+                <h5 class="section-heading">
+                    <i class="bi bi-cash-stack me-2"></i>
+                    Income Information
+                </h5>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label asp-for="GrossMonthlySalary"
+                               class="form-label">
+                            Gross Monthly Income (KES)
+                        </label>
+
+                        <input asp-for="GrossMonthlySalary"
+                               type="number"
+                               min="0"
+                               step="0.01"
+                               class="form-control"
+                               placeholder="e.g. 50000" />
+
+                        <span asp-validation-for="GrossMonthlySalary"
+                              class="text-danger small"></span>
+
+                        <div class="field-hint">
+                            Total monthly income before deductions.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="NetMonthlySalary"
+                               class="form-label">
+                            Net Monthly Income (KES)
+                        </label>
+
+                        <input asp-for="NetMonthlySalary"
+                               type="number"
+                               min="0"
+                               step="0.01"
+                               class="form-control"
+                               placeholder="e.g. 42000" />
+
+                        <span asp-validation-for="NetMonthlySalary"
+                              class="text-danger small"></span>
+
+                        <div class="field-hint">
+                            Monthly income after deductions.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="OtherMonthlyIncome"
+                               class="form-label">
+                            Other Monthly Income (KES)
+                        </label>
+
+                        <input asp-for="OtherMonthlyIncome"
+                               type="number"
+                               min="0"
+                               step="0.01"
+                               class="form-control"
+                               placeholder="e.g. 10000" />
+
+                        <span asp-validation-for="OtherMonthlyIncome"
+                              class="text-danger small"></span>
+
+                        <div class="field-hint">
+                            Include additional income such as rental income,
+                            farming, side businesses or other sources.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="OtherIncomeSource"
+                               class="form-label">
+                            Source of Other Income
+                        </label>
+
+                        <input asp-for="OtherIncomeSource"
+                               class="form-control"
+                               placeholder="e.g. Rental income, farming" />
+
+                        <span asp-validation-for="OtherIncomeSource"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="PayrollFrequency"
+                               class="form-label">
+                            Income / Payroll Frequency
+                        </label>
+
+                        <select asp-for="PayrollFrequency"
+                                class="form-select"
+                                asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.PayrollFrequency>()">
+                            <option value="">Select frequency</option>
+                        </select>
+
+                        <span asp-validation-for="PayrollFrequency"
+                              class="text-danger small"></span>
+
+                        <div class="field-hint">
+                            Select how frequently you receive your main income.
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="information-note">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Please provide accurate income information. Kredvanta may
+                    request supporting documents during the verification and
+                    loan assessment process. Do not include income that you
+                    cannot reasonably substantiate.
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center
+                    flex-wrap gap-3 mt-4 pt-3 border-top">
+
+                    <a asp-controller="Profile"
+                       asp-action="Step2"
+                       class="btn-secondary-custom">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Back
+                    </a>
+
+                    <button type="submit" class="btn-primary-custom">
+                        Save & Continue
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

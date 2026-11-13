@@ -1,0 +1,760 @@
+﻿@model Kredvanta.ViewModels.Verification.UploadVerificationDocumentViewModel
+
+@{
+    ViewData["Title"] = "Upload Verification Document";
+    Layout = "_Layout";
+
+    var documentTypes = ViewBag.DocumentTypes as IEnumerable<string>
+        ?? Enumerable.Empty<string>();
+
+    var isNationalIdSide =
+        Model.DocumentType == "National ID - Front" ||
+        Model.DocumentType == "National ID - Back";
+
+    var isNationalIdFront = Model.DocumentType == "National ID - Front";
+    var isNationalIdBack = Model.DocumentType == "National ID - Back";
+}
+
+<style>
+    .upload-page {
+        background: #f5f7fb;
+        min-height: 100vh;
+        padding: 35px 0 60px;
+    }
+
+        .upload-page .container {
+            max-width: 1150px;
+        }
+
+    .page-title {
+        color: #101d36;
+        font-weight: 800;
+        letter-spacing: -.6px;
+    }
+
+    .text-muted-custom {
+        color: #718096;
+    }
+
+    .back-link {
+        color: #718096;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+        .back-link:hover {
+            color: #f58220;
+        }
+
+    .upload-hero {
+        background: linear-gradient(120deg, #101d36, #1c355d);
+        border-radius: 18px;
+        padding: 30px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        margin: 24px 0;
+    }
+
+        .upload-hero::after {
+            content: "";
+            position: absolute;
+            height: 220px;
+            width: 220px;
+            border: 35px solid rgba(255,255,255,.06);
+            border-radius: 50%;
+            right: -65px;
+            top: -75px;
+            pointer-events: none;
+        }
+
+    .hero-icon {
+        width: 55px;
+        height: 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        background: rgba(255,255,255,.12);
+        color: #f58220;
+        font-size: 26px;
+        margin-bottom: 15px;
+    }
+
+    .upload-card,
+    .guidelines-card {
+        background: white;
+        border: 1px solid #e9edf3;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(16,29,54,.035);
+    }
+
+    .upload-card {
+        padding: 28px;
+    }
+
+    .guidelines-card {
+        padding: 24px;
+        margin-bottom: 18px;
+    }
+
+    .form-label {
+        color: #253653;
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 9px;
+    }
+
+    .form-control,
+    .form-select {
+        border: 1px solid #dce3ed;
+        border-radius: 9px;
+        min-height: 47px;
+        padding: 11px 13px;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #f58220;
+            box-shadow: 0 0 0 3px rgba(245,130,32,.12);
+        }
+
+    .file-upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 13px;
+        padding: 30px 20px;
+        background: #fafbfd;
+        text-align: center;
+        transition: .2s ease;
+    }
+
+        .file-upload-area:hover,
+        .file-upload-area:focus-within {
+            border-color: #f58220;
+            background: #fffaf5;
+        }
+
+    .file-upload-icon {
+        width: 62px;
+        height: 62px;
+        border-radius: 15px;
+        background: #fff1e5;
+        color: #f58220;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin: 0 auto 15px;
+    }
+
+    .file-input {
+        max-width: 100%;
+        background: transparent;
+        border: none;
+        padding: 8px;
+    }
+
+    .file-name-display {
+        color: #16834b;
+        font-size: 13px;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .document-type-locked {
+        background: #f5f7fb !important;
+        color: #253653;
+        font-weight: 700;
+    }
+
+    .document-info {
+        background: #f1f5fb;
+        border: 1px solid #e1e8f2;
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    .security-panel {
+        background: #edf2fa;
+        border: 1px solid #e1e8f2;
+        border-radius: 13px;
+        padding: 17px;
+    }
+
+    .btn-kredvanta {
+        background: #f58220;
+        border: none;
+        color: white;
+        padding: 12px 23px;
+        border-radius: 9px;
+        font-weight: 700;
+        transition: .2s ease;
+    }
+
+        .btn-kredvanta:hover {
+            background: #dc6d12;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-cancel {
+        border: 1px solid #dce3ed;
+        background: white;
+        color: #40516b;
+        padding: 12px 23px;
+        border-radius: 9px;
+        font-weight: 600;
+    }
+
+        .btn-cancel:hover {
+            background: #edf2fa;
+        }
+
+    .guideline-item {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 19px;
+        align-items: flex-start;
+    }
+
+    .guideline-icon {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        border-radius: 9px;
+        background: #edf2fa;
+        color: #1c355d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .step-number {
+        width: 29px;
+        height: 29px;
+        min-width: 29px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #edf2fa;
+        color: #1c355d;
+        font-size: 13px;
+        font-weight: 800;
+    }
+
+    @@media(max-width: 576px) {
+        .upload-hero {
+            padding: 23px;
+        }
+
+        .upload-card {
+            padding: 20px;
+        }
+    }
+</style>
+
+<div class="upload-page">
+    <div class="container">
+
+        <a asp-controller="Verification"
+           asp-action="Index"
+           class="back-link">
+            <i class="bi bi-arrow-left me-2"></i>
+            Back to My Documents
+        </a>
+
+        <div class="mt-3">
+            <div class="small fw-semibold text-uppercase mb-2"
+                 style="color:#f58220;letter-spacing:1.5px;">
+                BORROWER PORTAL
+            </div>
+
+            <h2 class="page-title mb-2">
+                Upload Verification Document
+            </h2>
+
+            <p class="text-muted-custom mb-0">
+                Provide the required identity documents to help us verify your
+                borrower profile.
+            </p>
+        </div>
+
+        <!-- HERO -->
+        <div class="upload-hero">
+            <div class="row align-items-center g-3">
+                <div class="col-lg-9">
+                    <div class="hero-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+
+                    <h4 class="fw-bold mb-2">
+                        Secure identity verification
+                    </h4>
+
+                    <p class="text-white-50 mb-0">
+                        Submit clear, genuine and valid documents. Our
+                        authorised verification team will review your
+                        submissions before your identity is approved.
+                    </p>
+                </div>
+
+                <div class="col-lg-3 text-lg-end">
+                    <i class="bi bi-file-earmark-lock2"
+                       style="font-size:75px;color:rgba(255,255,255,.75);"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+
+            <!-- MAIN FORM -->
+            <div class="col-lg-8">
+                <div class="upload-card">
+
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="file-upload-icon mb-0"
+                             style="width:48px;height:48px;font-size:22px;">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                        </div>
+
+                        <div>
+                            <h5 class="fw-bold mb-1" style="color:#101d36;">
+                                Document submission
+                            </h5>
+                            <p class="small text-muted mb-0">
+                                Complete the details below to submit your document.
+                            </p>
+                        </div>
+                    </div>
+
+                    <form asp-controller="Verification"
+                          asp-action="Upload"
+                          method="post"
+                          enctype="multipart/form-data">
+
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="alert alert-danger"
+                             role="alert">
+                        </div>
+
+                        <!-- DOCUMENT TYPE -->
+                        <div class="mb-4">
+                            <label asp-for="DocumentType" class="form-label">
+                                Document type
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            @if (isNationalIdSide)
+                            {
+                                <!-- Dedicated ID upload: preserve the selected side. -->
+                                <input asp-for="DocumentType" type="hidden" />
+
+                                <div class="form-control document-type-locked d-flex align-items-center gap-2">
+                                    <i class="bi bi-person-vcard"
+                                       style="color:#f58220;"></i>
+                                    @Model.DocumentType
+                                </div>
+                            }
+                            else
+                            {
+                                <select asp-for="DocumentType"
+                                        class="form-select"
+                                        id="DocumentType">
+
+                                    <option value="">
+                                        Select the type of document
+                                    </option>
+
+                                    @foreach (var type in documentTypes)
+                                    {
+                                        <option value="@type">@type</option>
+                                    }
+                                </select>
+                            }
+
+                            <span asp-validation-for="DocumentType"
+                                  class="text-danger small">
+                            </span>
+                        </div>
+
+                        <!-- DOCUMENT-SPECIFIC GUIDANCE -->
+                        <div class="document-info mb-4" id="documentGuidance">
+                            <div class="d-flex gap-3">
+                                <i class="bi bi-info-circle-fill"
+                                   style="font-size:22px;color:#1c355d;"></i>
+
+                                <div>
+                                    <div class="fw-bold small mb-1"
+                                         style="color:#101d36;"
+                                         id="guidanceTitle">
+                                        Before uploading
+                                    </div>
+
+                                    <p class="small text-muted mb-0"
+                                       id="guidanceText">
+                                        Select a document type to see the
+                                        applicable upload instructions.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FILE -->
+                        <div class="mb-4">
+                            <label asp-for="File" class="form-label">
+                                Select document file
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <div class="file-upload-area">
+                                <div class="file-upload-icon">
+                                    <i class="bi bi-cloud-arrow-up"></i>
+                                </div>
+
+                                <h6 class="fw-bold mb-2"
+                                    style="color:#101d36;"
+                                    id="fileHeading">
+                                    Choose a document to upload
+                                </h6>
+
+                                <p class="small text-muted mb-3"
+                                   id="fileDescription">
+                                    Select a clear file from your device.
+                                </p>
+
+                                <input asp-for="File"
+                                       type="file"
+                                       class="form-control file-input"
+                                       id="File"
+                                       accept=".pdf,.jpg,.jpeg,.png" />
+
+                                <span asp-validation-for="File"
+                                      class="text-danger small d-block mt-2">
+                                </span>
+
+                                <div id="selectedFile"
+                                     class="file-name-display mt-3">
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between flex-wrap gap-2 mt-2">
+                                <small class="text-muted" id="acceptedFormats">
+                                    <i class="bi bi-file-earmark me-1"></i>
+                                    PDF, JPG, JPEG or PNG
+                                </small>
+
+                                <small class="text-muted">
+                                    <i class="bi bi-hdd me-1"></i>
+                                    Maximum file size: 5 MB
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- SECURITY INFORMATION -->
+                        <div class="security-panel mb-4">
+                            <div class="d-flex gap-3">
+                                <i class="bi bi-shield-lock-fill"
+                                   style="font-size:23px;color:#1c355d;"></i>
+
+                                <div>
+                                    <div class="fw-bold small"
+                                         style="color:#101d36;">
+                                        Your documents are handled securely
+                                    </div>
+
+                                    <p class="small text-muted mb-0 mt-1">
+                                        Submit genuine documents belonging to
+                                        you. Your file will be stored privately
+                                        and made available to authorised
+                                        personnel for verification.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning small">
+                            <i class="bi bi-clock-history me-2"></i>
+                            <strong>Important:</strong> Uploading a document
+                            does not mean it has been approved. Its status
+                            will remain Pending until the verification team
+                            completes its review.
+                        </div>
+
+                        <!-- ACTIONS -->
+                        <div class="d-flex flex-column flex-sm-row gap-2">
+                            <button type="submit" class="btn btn-kredvanta">
+                                <i class="bi bi-cloud-arrow-up me-2"></i>
+                                Submit Document
+                            </button>
+
+                            <a asp-controller="Verification"
+                               asp-action="Index"
+                               class="btn btn-cancel text-center">
+                                Cancel
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+            <!-- GUIDELINES -->
+            <div class="col-lg-4">
+
+                <div class="guidelines-card">
+                    <div class="d-flex align-items-center gap-2 mb-4">
+                        <i class="bi bi-info-circle-fill"
+                           style="font-size:23px;color:#f58220;"></i>
+
+                        <h5 class="fw-bold mb-0" style="color:#101d36;">
+                            Upload guidelines
+                        </h5>
+                    </div>
+
+                    <div class="guideline-item">
+                        <div class="guideline-icon">
+                            <i class="bi bi-eye"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold small">Clear and readable</div>
+                            <p class="small text-muted mb-0">
+                                Ensure the entire document is visible, focused
+                                and not blurred.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="guideline-item">
+                        <div class="guideline-icon">
+                            <i class="bi bi-person-vcard"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold small">Correct information</div>
+                            <p class="small text-muted mb-0">
+                                Names, identification numbers and other details
+                                should be clearly visible.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="guideline-item">
+                        <div class="guideline-icon">
+                            <i class="bi bi-image"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold small">Avoid cropped images</div>
+                            <p class="small text-muted mb-0">
+                                Include all document edges. Do not cover
+                                important information.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="guideline-item mb-0">
+                        <div class="guideline-icon">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold small">Genuine documents</div>
+                            <p class="small text-muted mb-0">
+                                Do not submit altered, misleading or
+                                password-protected files.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REVIEW PROCESS -->
+                <div class="guidelines-card">
+                    <h6 class="fw-bold mb-4" style="color:#101d36;">
+                        What happens next?
+                    </h6>
+
+                    <div class="d-flex gap-3 mb-3">
+                        <span class="step-number">1</span>
+                        <div>
+                            <div class="fw-bold small">Submission</div>
+                            <p class="small text-muted mb-0">
+                                Your document is securely received.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 mb-3">
+                        <span class="step-number">2</span>
+                        <div>
+                            <div class="fw-bold small">Verification review</div>
+                            <p class="small text-muted mb-0">
+                                An authorised team member checks your document.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <span class="step-number">3</span>
+                        <div>
+                            <div class="fw-bold small">Review outcome</div>
+                            <p class="small text-muted mb-0">
+                                You can view the review result and any
+                                instructions in your Verification Centre.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const documentType = document.getElementById("DocumentType");
+            const fileInput = document.getElementById("File");
+            const selectedFile = document.getElementById("selectedFile");
+
+            const guidanceTitle = document.getElementById("guidanceTitle");
+            const guidanceText = document.getElementById("guidanceText");
+            const fileHeading = document.getElementById("fileHeading");
+            const fileDescription = document.getElementById("fileDescription");
+            const acceptedFormats = document.getElementById("acceptedFormats");
+
+            const nationalIdFront = "National ID - Front";
+            const nationalIdBack = "National ID - Back";
+
+            function updateDocumentInstructions() {
+
+                if (!documentType || !fileInput) return;
+
+                const selectedType = documentType.value;
+
+                const isIdSide =
+                    selectedType === nationalIdFront ||
+                    selectedType === nationalIdBack;
+
+                if (isIdSide) {
+
+                    fileInput.accept = ".jpg,.jpeg,.png";
+
+                    guidanceTitle.textContent = "National ID image requirements";
+
+                    guidanceText.textContent =
+                        "Upload a clear image of the " +
+                        (selectedType === nationalIdFront ? "front" : "back") +
+                        " of your National ID. Ensure all details are visible.";
+
+                    fileHeading.textContent =
+                        selectedType === nationalIdFront
+                            ? "Upload the front of your National ID"
+                            : "Upload the back of your National ID";
+
+                    fileDescription.textContent =
+                        "Only JPG, JPEG and PNG image files are accepted for this document.";
+
+                    acceptedFormats.innerHTML =
+                        '<i class="bi bi-image me-1"></i> JPG, JPEG or PNG only';
+
+                } else {
+
+                    fileInput.accept = ".pdf,.jpg,.jpeg,.png";
+
+                    guidanceTitle.textContent = "Identity document requirements";
+
+                    guidanceText.textContent =
+                        "Upload a complete, genuine and readable copy of your selected identity document.";
+
+                    fileHeading.textContent = "Choose your document file";
+
+                    fileDescription.textContent =
+                        "You can upload a PDF document or a clear image.";
+
+                    acceptedFormats.innerHTML =
+                        '<i class="bi bi-file-earmark me-1"></i> PDF, JPG, JPEG or PNG';
+                }
+
+                // Clear an already-selected file when the document type changes.
+                fileInput.value = "";
+                selectedFile.textContent = "";
+            }
+
+            if (documentType) {
+                documentType.addEventListener("change", updateDocumentInstructions);
+                updateDocumentInstructions();
+            } else {
+                // Dedicated National ID upload: the document type is hidden.
+                const lockedType = "@Model.DocumentType";
+
+                const isLockedIdSide =
+                    lockedType === nationalIdFront ||
+                    lockedType === nationalIdBack;
+
+                if (isLockedIdSide) {
+                    fileInput.accept = ".jpg,.jpeg,.png";
+
+                    guidanceTitle.textContent = "National ID image requirements";
+
+                    guidanceText.textContent =
+                        "Upload a clear image of the " +
+                        (lockedType === nationalIdFront ? "front" : "back") +
+                        " of your National ID. Ensure all details are visible.";
+
+                    fileHeading.textContent =
+                        lockedType === nationalIdFront
+                            ? "Upload the front of your National ID"
+                            : "Upload the back of your National ID";
+
+                    fileDescription.textContent =
+                        "Only JPG, JPEG and PNG image files are accepted.";
+
+                    acceptedFormats.innerHTML =
+                        '<i class="bi bi-image me-1"></i> JPG, JPEG or PNG only';
+                }
+            }
+
+            // Display selected file safely.
+            if (fileInput && selectedFile) {
+                fileInput.addEventListener("change", function () {
+
+                    selectedFile.textContent = "";
+
+                    if (!this.files || this.files.length === 0) {
+                        return;
+                    }
+
+                    const file = this.files[0];
+                    const sizeInMB = file.size / (1024 * 1024);
+
+                    const name = document.createElement("span");
+                    name.textContent = file.name;
+
+                    const size = document.createElement("span");
+                    size.textContent = " (" + sizeInMB.toFixed(2) + " MB)";
+
+                    const icon = document.createElement("i");
+                    icon.className = "bi bi-check-circle-fill me-1";
+
+                    selectedFile.appendChild(icon);
+                    selectedFile.appendChild(name);
+                    selectedFile.appendChild(size);
+
+                    if (file.size > 5 * 1024 * 1024) {
+                        selectedFile.textContent =
+                            "Selected file exceeds the 5 MB limit.";
+
+                        selectedFile.style.color = "#dc3545";
+                    } else {
+                        selectedFile.style.color = "#16834b";
+                    }
+                });
+            }
+        });
+    </script>
+}

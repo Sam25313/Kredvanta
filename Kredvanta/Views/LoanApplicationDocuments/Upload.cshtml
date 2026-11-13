@@ -1,0 +1,219 @@
+﻿@model Kredvanta.ViewModels.LoanApplications.UploadLoanApplicationDocumentViewModel
+
+
+@{
+    ViewData["Title"] = "Upload Loan Application Document";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <!-- Page heading -->
+            <div class="mb-4">
+                <a asp-controller="LoanApplications"
+                   asp-action="Details"
+                   asp-route-id="@Model.LoanApplicationId"
+                   class="text-decoration-none text-muted">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Back to Application
+                </a>
+
+                <h2 class="fw-bold mt-3 mb-2">
+                    Upload Supporting Documents
+                </h2>
+
+                <p class="text-muted">
+                    Upload the documents required to support your loan application.
+                </p>
+            </div>
+
+            <!-- Application information -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <small class="text-muted d-block">
+                                Application Number
+                            </small>
+                            <strong>@Model.ApplicationNumber</strong>
+                        </div>
+
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">
+                                Loan Product
+                            </small>
+                            <strong>@Model.LoanProductName</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload form -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+
+                    <h5 class="fw-bold mb-3">
+                        Document Information
+                    </h5>
+
+                    <form asp-controller="LoanApplicationDocuments"
+                          asp-action="Upload"
+                          method="post"
+                          enctype="multipart/form-data">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden"
+                               asp-for="LoanApplicationId" />
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="alert alert-danger"
+                             role="alert">
+                        </div>
+
+                        <!-- Document type -->
+                        <div class="mb-4">
+                            <label asp-for="LoanProductRequiredDocumentId"
+                                   class="form-label fw-semibold">
+                                Document Type
+                            </label>
+
+                            <select asp-for="LoanProductRequiredDocumentId"
+                                    class="form-select"
+                                    id="documentType">
+
+                                <option value="">
+                                    -- Select document type --
+                                </option>
+
+                                @if (Model.RequiredDocuments.Any())
+                                {
+                                    @foreach (var document in Model.RequiredDocuments)
+                                    {
+                                        <option value="@document.Id">
+                                            @document.DocumentName
+                                            @(document.IsMandatory ? "(Required)" : "(Optional)")
+                                        </option>
+                                    }
+                                }
+                                else
+                                {
+                                    <option value="" disabled>
+                                        No document requirements are available for this loan product.
+                                    </option>
+                                }
+                            </select>
+
+                            <span asp-validation-for="LoanProductRequiredDocumentId"
+                                  class="text-danger small">
+                            </span>
+
+                            <div class="form-text">
+                                Select the document type that matches the file you are uploading.
+                            </div>
+                        </div>
+
+                        <!-- Document requirements -->
+                        @if (Model.RequiredDocuments.Any())
+                        {
+                            <div class="bg-light rounded p-3 mb-4">
+                                <h6 class="fw-semibold mb-2">
+                                    Required documents for this loan
+                                </h6>
+
+                                <ul class="mb-0 ps-3">
+                                    @foreach (var document in Model.RequiredDocuments)
+                                    {
+                                        <li class="mb-2">
+                                            <strong>@document.DocumentName</strong>
+
+                                            @if (document.IsMandatory)
+                                            {
+                                                <span class="badge bg-danger ms-1">
+                                                    Mandatory
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary ms-1">
+                                                    Optional
+                                                </span>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(document.Description))
+                                            {
+                                                <div class="small text-muted">
+                                                    @document.Description
+                                                </div>
+                                            }
+
+                                            @if (document.RequiredPeriodMonths.HasValue)
+                                            {
+                                                <div class="small text-muted">
+                                                    Period required:
+                                                    @document.RequiredPeriodMonths months
+                                                </div>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        <!-- File selection -->
+                        <div class="mb-4">
+                            <label asp-for="File"
+                                   class="form-label fw-semibold">
+                                Select Document
+                            </label>
+
+                            <input asp-for="File"
+                                   type="file"
+                                   class="form-control"
+                                   accept=".pdf,.jpg,.jpeg,.png" />
+
+                            <span asp-validation-for="File"
+                                  class="text-danger small">
+                            </span>
+
+                            <div class="form-text">
+                                Accepted formats: PDF, JPG, JPEG and PNG.
+                                Maximum file size: 10 MB.
+                            </div>
+                        </div>
+
+                        <!-- Security notice -->
+                        <div class="alert alert-info border-0">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            Your uploaded documents are stored securely and
+                            are accessible only to authorised personnel.
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-controller="LoanApplications"
+                               asp-action="Details"
+                               asp-route-id="@Model.LoanApplicationId"
+                               class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+
+                            <button type="submit"
+                                    class="btn btn-primary px-4">
+                                <i class="bi bi-cloud-arrow-up me-2"></i>
+                                Upload Document
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

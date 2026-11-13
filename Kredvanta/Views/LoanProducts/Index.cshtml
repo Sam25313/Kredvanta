@@ -1,0 +1,510 @@
+﻿@using Kredvanta.Models.Products
+@model IEnumerable<LoanProduct>
+
+@{
+    ViewData["Title"] = "Loan Products";
+    Layout = "_Layout";
+
+    var products = Model.ToList();
+
+    bool isBorrower = User.IsInRole("Borrower");
+
+    bool canManageProducts =
+        User.IsInRole("Administrator") ||
+        User.IsInRole("CreditManager") ||
+        User.IsInRole("LoanOfficer");
+
+    var activeProducts = products.Where(p => p.IsActive).ToList();
+    var inactiveProducts = products.Where(p => !p.IsActive).ToList();
+}
+
+<div class="container-fluid py-4">
+
+    <!-- Notifications -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            @TempData["InfoMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (isBorrower)
+    {
+        <!-- ==========================================
+             BORROWER LOAN CATALOGUE
+        =========================================== -->
+
+        <div class="mb-4">
+            <div class="mb-2">
+                <span class="badge bg-primary-subtle text-primary px-3 py-2">
+                    <i class="bi bi-wallet2 me-1"></i>
+                    Kredvanta Lending
+                </span>
+            </div>
+
+            <h2 class="fw-bold mb-2">Explore Our Loan Products</h2>
+
+            <p class="text-muted mb-0">
+                Discover financing options designed to support your
+                personal and financial goals. Compare the available
+                products and choose the one that suits your needs.
+            </p>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="rounded-3 bg-primary bg-opacity-10 p-3">
+                            <i class="bi bi-shield-check text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-semibold mb-1">Secure Application</h6>
+                            <small class="text-muted">
+                                Your information is handled securely.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="rounded-3 bg-success bg-opacity-10 p-3">
+                            <i class="bi bi-calendar-check text-success fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-semibold mb-1">Flexible Repayment</h6>
+                            <small class="text-muted">
+                                Explore available repayment periods.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div class="rounded-3 bg-info bg-opacity-10 p-3">
+                            <i class="bi bi-clipboard-check text-info fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-semibold mb-1">Transparent Terms</h6>
+                            <small class="text-muted">
+                                Review product conditions before applying.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h5 class="fw-bold mb-1">Available Loan Products</h5>
+                <small class="text-muted">
+                    @activeProducts.Count product(s) currently available
+                </small>
+            </div>
+        </div>
+
+        @if (!activeProducts.Any())
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-wallet2 display-4 text-muted"></i>
+                    <h5 class="fw-bold mt-3">No products currently available</h5>
+                    <p class="text-muted mb-0">
+                        Please check again later or contact our support team.
+                    </p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+
+                @foreach (var product in activeProducts)
+                {
+                    <div class="col-xl-4 col-md-6">
+                        <div class="card border-0 shadow-sm h-100 product-card">
+
+                            <div class="card-body p-4">
+
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="rounded-3 bg-primary bg-opacity-10 p-3">
+                                        <i class="bi bi-cash-stack text-primary fs-3"></i>
+                                    </div>
+
+                                    <span class="badge bg-success-subtle text-success">
+                                        Available
+                                    </span>
+                                </div>
+
+                                <small class="text-muted fw-semibold">
+                                    @product.ProductCode
+                                </small>
+
+                                <h5 class="fw-bold mt-1 mb-2">
+                                    @product.ProductName
+                                </h5>
+
+                                <p class="text-muted small product-description">
+                                    @(string.IsNullOrWhiteSpace(product.Description)
+                                        ? "Explore this financing option and its repayment terms."
+                                        : product.Description)
+                                </p>
+
+                                <hr class="my-3" />
+
+                                <div class="mb-3">
+                                    <small class="text-muted d-block mb-1">
+                                        Loan amount range
+                                    </small>
+
+                                    <h5 class="fw-bold mb-0">
+                                        KES @product.MinimumAmount.ToString("N2")
+                                        –
+                                        @product.MaximumAmount.ToString("N2")
+                                    </h5>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">
+                                            Annual interest
+                                        </small>
+                                        <span class="fw-semibold">
+                                            @product.AnnualInterestRate.ToString("N2")%
+                                        </span>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">
+                                            Interest method
+                                        </small>
+                                        <span class="fw-semibold">
+                                            @product.InterestMethod
+                                        </span>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">
+                                            Repayment frequency
+                                        </small>
+                                        <span class="fw-semibold">
+                                            @product.RepaymentFrequency
+                                        </span>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">
+                                            Repayment period
+                                        </small>
+                                        <span class="fw-semibold">
+                                            @product.MinimumTermPeriods
+                                            –
+                                            @product.MaximumTermPeriods
+                                        </span>
+                                    </div>
+
+                                </div>
+
+                                <div class="d-grid gap-2">
+
+                                    <a asp-action="Details"
+                                       asp-route-id="@product.Id"
+                                       class="btn btn-outline-primary">
+                                        View Product Details
+                                        <i class="bi bi-arrow-right ms-1"></i>
+                                    </a>
+
+                                    <a asp-controller="LoanApplications"
+                                       asp-action="Create"
+                                       asp-route-loanProductId="@product.Id"
+                                       class="btn btn-primary">
+                                        Apply for This Loan
+                                    </a>
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                }
+
+            </div>
+        }
+
+        <div class="alert alert-light border mt-4 mb-0">
+            <div class="d-flex gap-2">
+                <i class="bi bi-info-circle text-primary fs-5"></i>
+                <div>
+                    <strong>Important information</strong>
+                    <p class="small text-muted mb-0">
+                        Viewing a product or starting an application does not
+                        guarantee loan approval. All applications are subject
+                        to identity verification, eligibility assessment,
+                        credit review and the applicable lending terms.
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+    else if (canManageProducts)
+    {
+        <!-- ==========================================
+             STAFF PRODUCT MANAGEMENT
+        =========================================== -->
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1">Loan Products</h2>
+                <p class="text-muted mb-0">
+                    Manage lending products, interest rates and repayment terms.
+                </p>
+            </div>
+
+            <a asp-action="Create" class="btn btn-primary px-4">
+                <i class="bi bi-plus-lg me-2"></i>
+                Create Loan Product
+            </a>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Total Products</p>
+                        <h3 class="fw-bold mb-0">@products.Count</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Active Products</p>
+                        <h3 class="fw-bold text-success mb-0">
+                            @activeProducts.Count
+                        </h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <p class="text-muted mb-1">Inactive Products</p>
+                        <h3 class="fw-bold text-secondary mb-0">
+                            @inactiveProducts.Count
+                        </h3>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Staff Product Table -->
+        <div class="card border-0 shadow-sm">
+
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="fw-bold mb-0">All Loan Products</h5>
+            </div>
+
+            <div class="card-body p-0">
+
+                @if (!products.Any())
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-box-seam display-4 text-muted"></i>
+                        <h5 class="mt-3">No loan products found</h5>
+                        <p class="text-muted">
+                            Create your first loan product.
+                        </p>
+                        <a asp-action="Create" class="btn btn-primary">
+                            Create First Product
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Product</th>
+                                    <th>Loan Amount Range</th>
+                                    <th>Interest Rate</th>
+                                    <th>Interest Method</th>
+                                    <th>Repayment</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (var product in products)
+                                {
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="fw-semibold">
+                                                @product.ProductName
+                                            </div>
+                                            <small class="text-muted">
+                                                @product.ProductCode
+                                            </small>
+                                        </td>
+
+                                        <td>
+                                            <div class="fw-semibold">
+                                                KES @product.MinimumAmount.ToString("N2")
+                                                –
+                                                @product.MaximumAmount.ToString("N2")
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <span class="fw-semibold">
+                                                @product.AnnualInterestRate.ToString("N2")%
+                                            </span>
+                                            <small class="text-muted d-block">
+                                                Per annum
+                                            </small>
+                                        </td>
+
+                                        <td>@product.InterestMethod</td>
+
+                                        <td>
+                                            @product.RepaymentFrequency
+                                            <small class="text-muted d-block">
+                                                @product.MinimumTermPeriods–@product.MaximumTermPeriods periods
+                                            </small>
+                                        </td>
+
+                                        <td>
+                                            @if (product.IsActive)
+                                            {
+                                                <span class="badge bg-success-subtle text-success">
+                                                    Active
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary-subtle text-secondary">
+                                                    Inactive
+                                                </span>
+                                            }
+                                        </td>
+
+                                        <td class="text-end pe-4">
+                                            <div class="dropdown">
+                                                <button class="btn btn-light btn-sm"
+                                                        type="button"
+                                                        data-bs-toggle="dropdown"
+                                                        aria-expanded="false">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+
+                                                <ul class="dropdown-menu dropdown-menu-end">
+
+                                                    <li>
+                                                        <a asp-action="Details"
+                                                           asp-route-id="@product.Id"
+                                                           class="dropdown-item">
+                                                            <i class="bi bi-eye me-2"></i>
+                                                            View Details
+                                                        </a>
+                                                    </li>
+
+                                                    <li>
+                                                        <a asp-action="Edit"
+                                                           asp-route-id="@product.Id"
+                                                           class="dropdown-item">
+                                                            <i class="bi bi-pencil me-2"></i>
+                                                            Edit Product
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a asp-controller="LoanProductRequirements"
+                                                           asp-action="Index"
+                                                           asp-route-loanProductId="@product.Id"
+                                                           class="dropdown-item">
+                                                            <i class="bi bi-files me-2"></i>
+                                                            Manage Requirements
+                                                        </a>
+                                                    </li>
+                                                    @if (product.IsActive)
+                                                    {
+                                                        <li><hr class="dropdown-divider" /></li>
+                                                        <li>
+                                                            <form asp-action="Deactivate"
+                                                                  asp-route-id="@product.Id"
+                                                                  method="post"
+                                                                  onsubmit="return confirm('Are you sure you want to deactivate this product?');">
+
+                                                                @Html.AntiForgeryToken()
+
+                                                                <button type="submit"
+                                                                        class="dropdown-item text-danger">
+                                                                    <i class="bi bi-pause-circle me-2"></i>
+                                                                    Deactivate
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    }
+
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+
+                        </table>
+                    </div>
+                }
+
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            You are not authorised to access the loan product catalogue.
+        </div>
+    }
+
+</div>
+
+<style>
+    .product-card {
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 .75rem 1.5rem rgba(0, 0, 0, .08) !important;
+        }
+
+    .product-description {
+        min-height: 48px;
+    }
+</style>

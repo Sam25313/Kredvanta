@@ -1,0 +1,1457 @@
+﻿@{
+    ViewData["Title"] = "Home";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Kredvanta | Financial Support Made Simple</title>
+
+    <meta name="description"
+          content="Kredvanta makes accessing financial support simpler. Create an account, explore loan products and apply online." />
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet" />
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+          rel="stylesheet" />
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet" />
+
+    <style>
+            :root {
+                --navy: #101D36;
+                --navy-light: #1C2D4A;
+                --orange: #F58220;
+                --orange-dark: #DF7014;
+                --light: #F6F8FC;
+                --text: #344054;
+                --muted: #667085;
+                --white: #FFFFFF;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                font-family: 'DM Sans', sans-serif;
+                color: var(--text);
+                background: var(--white);
+                margin: 0;
+            }
+
+            a {
+                text-decoration: none;
+            }
+
+            /* NAVIGATION */
+
+            .navbar {
+                background: rgba(255,255,255,.97);
+                padding: 17px 0;
+                box-shadow: 0 2px 15px rgba(16,29,54,.06);
+            }
+
+            .navbar-brand {
+                font-size: 25px;
+                font-weight: 800;
+                color: var(--navy);
+                letter-spacing: -1px;
+            }
+
+            .navbar-brand span {
+                color: var(--orange);
+            }
+
+            .brand-icon {
+                color: var(--orange);
+                font-size: 26px;
+                margin-right: 7px;
+            }
+
+            .navbar .nav-link {
+                color: var(--navy);
+                font-weight: 600;
+                margin: 0 10px;
+                transition: .2s;
+            }
+
+            .navbar .nav-link:hover {
+                color: var(--orange);
+            }
+
+            .btn-primary-custom {
+                background: var(--orange);
+                color: white;
+                border: 1px solid var(--orange);
+                border-radius: 9px;
+                padding: 12px 23px;
+                font-weight: 700;
+                transition: all .25s ease;
+            }
+
+            .btn-primary-custom:hover {
+                background: var(--orange-dark);
+                border-color: var(--orange-dark);
+                color: white;
+                transform: translateY(-2px);
+            }
+
+            .btn-login {
+                color: var(--navy);
+                font-weight: 700;
+                text-decoration: none;
+            }
+
+            .btn-login:hover {
+                color: var(--orange);
+            }
+
+            .btn-outline-custom {
+                border: 1px solid var(--navy);
+                color: var(--navy);
+                border-radius: 9px;
+                padding: 12px 23px;
+                font-weight: 700;
+                transition: .25s;
+            }
+
+            .btn-outline-custom:hover {
+                background: var(--navy);
+                color: white;
+            }
+
+            /* HERO SECTION */
+
+            .hero-section {
+                background: linear-gradient(120deg, #F6F8FC 0%, #FFFFFF 65%);
+                padding: 85px 0 90px;
+                overflow: hidden;
+            }
+
+            .hero-badge {
+                display: inline-flex;
+                align-items: center;
+                background: #FFF0E2;
+                color: #C75B09;
+                padding: 9px 15px;
+                border-radius: 30px;
+                font-size: 13px;
+                font-weight: 700;
+                margin-bottom: 23px;
+            }
+
+            .hero-badge i {
+                margin-right: 7px;
+            }
+
+            .hero-title {
+                color: var(--navy);
+                font-size: clamp(38px, 5vw, 58px);
+                line-height: 1.13;
+                font-weight: 800;
+                letter-spacing: -2px;
+                margin-bottom: 22px;
+            }
+
+            .hero-title span {
+                color: var(--orange);
+            }
+
+            .hero-description {
+                color: var(--muted);
+                font-size: 17px;
+                line-height: 1.8;
+                max-width: 540px;
+            }
+
+            .hero-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 13px;
+                margin-top: 30px;
+            }
+
+            .hero-note {
+                color: var(--muted);
+                font-size: 12px;
+                margin-top: 18px;
+            }
+
+            .hero-visual {
+                position: relative;
+                border-radius: 22px;
+                overflow: hidden;
+                min-height: 410px;
+                box-shadow: 0 25px 60px rgba(16,29,54,.18);
+            }
+
+            .hero-visual img {
+                width: 100%;
+                height: 430px;
+                object-fit: cover;
+            }
+
+            .hero-visual-overlay {
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(180deg, transparent 45%, rgba(16,29,54,.9));
+            }
+
+            .hero-visual-content {
+                position: absolute;
+                bottom: 25px;
+                left: 25px;
+                right: 25px;
+                color: white;
+            }
+
+            .hero-visual-content h4 {
+                font-weight: 800;
+            }
+
+            .hero-visual-content p {
+                color: rgba(255,255,255,.85);
+                margin-bottom: 0;
+            }
+
+            .floating-card {
+                position: absolute;
+                top: 25px;
+                left: -18px;
+                background: white;
+                padding: 15px 19px;
+                border-radius: 13px;
+                box-shadow: 0 10px 30px rgba(16,29,54,.15);
+            }
+
+            .floating-card i {
+                color: var(--orange);
+                font-size: 23px;
+            }
+
+            .floating-card strong {
+                color: var(--navy);
+                display: block;
+                font-size: 14px;
+            }
+
+            .floating-card small {
+                color: var(--muted);
+            }
+
+            /* GENERAL SECTIONS */
+
+            .section-padding {
+                padding: 85px 0;
+            }
+
+            .section-heading {
+                color: var(--navy);
+                font-size: 36px;
+                font-weight: 800;
+                letter-spacing: -1px;
+            }
+
+            .section-subtitle {
+                color: var(--muted);
+                max-width: 650px;
+                margin: 12px auto 0;
+                line-height: 1.8;
+            }
+
+            .section-label {
+                color: var(--orange);
+                font-weight: 800;
+                font-size: 12px;
+                letter-spacing: 2px;
+                text-transform: uppercase;
+                margin-bottom: 12px;
+                display: block;
+            }
+
+            /* LOAN PRODUCTS */
+
+            .loan-section {
+                background: var(--light);
+            }
+
+            .loan-card {
+                background: white;
+                border-radius: 17px;
+                overflow: hidden;
+                height: 100%;
+                border: 1px solid #E9EDF5;
+                transition: all .3s ease;
+            }
+
+            .loan-card:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 18px 40px rgba(16,29,54,.11);
+            }
+
+            .loan-image {
+                height: 205px;
+                width: 100%;
+                object-fit: cover;
+            }
+
+            .loan-content {
+                padding: 23px;
+            }
+
+            .loan-tag {
+                display: inline-block;
+                color: #C75B09;
+                background: #FFF0E2;
+                font-size: 11px;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                border-radius: 30px;
+                padding: 7px 12px;
+                margin-bottom: 13px;
+            }
+
+            .loan-content h4 {
+                color: var(--navy);
+                font-size: 20px;
+                font-weight: 800;
+                margin-bottom: 10px;
+            }
+
+            .loan-content p {
+                color: var(--muted);
+                line-height: 1.7;
+                font-size: 14px;
+                min-height: 72px;
+            }
+
+            .loan-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 7px;
+                color: var(--orange);
+                font-weight: 800;
+                margin-top: 10px;
+                transition: .2s;
+            }
+
+            .loan-link:hover {
+                color: var(--orange-dark);
+                gap: 12px;
+            }
+
+            .loan-disclaimer {
+                color: var(--muted);
+                font-size: 12px;
+            }
+
+            /* ABOUT */
+
+            .about-image {
+                width: 100%;
+                height: 430px;
+                object-fit: cover;
+                border-radius: 20px;
+            }
+
+            .about-content h2 {
+                color: var(--navy);
+                font-size: 35px;
+                font-weight: 800;
+                line-height: 1.25;
+            }
+
+            .about-content p {
+                color: var(--muted);
+                line-height: 1.9;
+            }
+
+            .about-point {
+                display: flex;
+                gap: 13px;
+                margin-top: 20px;
+            }
+
+            .about-point i {
+                background: #FFF0E2;
+                color: var(--orange);
+                width: 38px;
+                height: 38px;
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 10px;
+            }
+
+            .about-point strong {
+                color: var(--navy);
+            }
+
+            /* FEATURES */
+
+            .feature-card {
+                padding: 28px 23px;
+                background: white;
+                border: 1px solid #E9EDF5;
+                border-radius: 15px;
+                height: 100%;
+                transition: .25s;
+            }
+
+            .feature-card:hover {
+                border-color: var(--orange);
+                transform: translateY(-5px);
+            }
+
+            .feature-icon {
+                width: 53px;
+                height: 53px;
+                background: #FFF0E2;
+                color: var(--orange);
+                border-radius: 13px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+                margin-bottom: 19px;
+            }
+
+            .feature-card h5 {
+                color: var(--navy);
+                font-weight: 800;
+                margin-bottom: 10px;
+            }
+
+            .feature-card p {
+                color: var(--muted);
+                font-size: 14px;
+                line-height: 1.8;
+                margin-bottom: 0;
+            }
+
+            /* HOW IT WORKS */
+
+            .steps-section {
+                background: var(--light);
+            }
+
+            .step-card {
+                text-align: center;
+                padding: 25px 15px;
+            }
+
+            .step-number {
+                width: 60px;
+                height: 60px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 20px;
+                background: var(--navy);
+                color: white;
+                border-radius: 50%;
+                font-size: 21px;
+                font-weight: 800;
+                border: 5px solid #E6EAF2;
+            }
+
+            .step-card h5 {
+                color: var(--navy);
+                font-weight: 800;
+            }
+
+            .step-card p {
+                color: var(--muted);
+                font-size: 14px;
+                line-height: 1.7;
+            }
+
+            /* TRUST SECTION */
+
+            .trust-section {
+                background: var(--navy);
+                color: white;
+            }
+
+            .trust-section h2 {
+                font-size: 34px;
+                font-weight: 800;
+            }
+
+            .trust-section p {
+                color: #D1D9E6;
+                line-height: 1.8;
+            }
+
+            .trust-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 18px;
+            }
+
+            .trust-item i {
+                color: var(--orange);
+                font-size: 21px;
+            }
+
+            .trust-image {
+                width: 100%;
+                height: 360px;
+                object-fit: cover;
+                border-radius: 18px;
+            }
+
+            /* FINAL CTA */
+
+            .cta-section {
+                padding: 80px 0;
+                background: linear-gradient(120deg, var(--navy), #1C3458);
+                text-align: center;
+                color: white;
+            }
+
+            .cta-section h2 {
+                font-size: 38px;
+                font-weight: 800;
+            }
+
+            .cta-section p {
+                color: #D1D9E6;
+                max-width: 650px;
+                margin: 15px auto 25px;
+                line-height: 1.8;
+            }
+
+            /* FOOTER */
+
+            footer {
+                background: #0A1427;
+                color: white;
+                padding: 55px 0 20px;
+            }
+
+            .footer-brand {
+                color: white;
+                font-size: 25px;
+                font-weight: 800;
+            }
+
+            .footer-brand span {
+                color: var(--orange);
+            }
+
+            footer p,
+            footer a {
+                color: #AAB5C7;
+                font-size: 14px;
+                line-height: 1.8;
+            }
+
+            footer a:hover {
+                color: var(--orange);
+            }
+
+            .footer-title {
+                font-weight: 800;
+                margin-bottom: 18px;
+            }
+
+            .footer-links a {
+                display: block;
+                margin-bottom: 10px;
+            }
+
+            .footer-bottom {
+                border-top: 1px solid rgba(255,255,255,.12);
+                margin-top: 35px;
+                padding-top: 20px;
+            }
+
+            /* RESPONSIVE */
+
+            @@media (max-width: 991px) {
+                .hero-section {
+                    padding: 65px 0;
+                }
+
+                .hero-visual {
+                    margin-top: 45px;
+                }
+
+                .floating-card {
+                    left: 12px;
+                }
+
+                .navbar .nav-link {
+                    margin: 5px 0;
+                }
+            }
+
+            @@media (max-width: 576px) {
+                .hero-title {
+                    font-size: 39px;
+                }
+
+                .hero-section {
+                    padding: 55px 0;
+                }
+
+                .hero-visual img {
+                    height: 330px;
+                }
+
+                .section-padding {
+                    padding: 65px 0;
+                }
+
+                .section-heading {
+                    font-size: 29px;
+                }
+
+                .about-image {
+                    height: 300px;
+                }
+
+                .cta-section h2 {
+                    font-size: 29px;
+                }
+            }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVIGATION -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+
+            <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-mortarboard-fill brand-icon"></i>Kred<span>vanta</span>
+            </a>
+
+            <button class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#mainNavbar"
+                    aria-controls="mainNavbar"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation">
+                <i class="bi bi-list fs-2"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNavbar">
+
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home">Home</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">About Us</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#loans">Loan Products</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#how-it-works">How It Works</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">Contact</a>
+                    </li>
+                </ul>
+
+                <div class="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0">
+
+                    <a asp-area="Identity"
+                       asp-page="/Account/Login"
+                       class="btn-login text-center">
+                        Sign In
+                    </a>
+
+                    <a asp-area="Identity"
+                       asp-page="/Account/Register"
+                       class="btn btn-primary-custom">
+                        Create Account
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- HERO SECTION -->
+    <section class="hero-section" id="home">
+
+        <div class="container">
+            <div class="row align-items-center g-5">
+
+                <div class="col-lg-6">
+
+                    <div class="hero-badge">
+                        <i class="bi bi-stars"></i>
+                        A Simpler Way to Access Financial Support
+                    </div>
+
+                    <h1 class="hero-title">
+                        Financial support,
+                        <span>made simpler.</span>
+                    </h1>
+
+                    <p class="hero-description">
+                        Take the next step towards your financial goals with
+                        Kredvanta. Explore loan options, create your account
+                        and manage your loan application through one convenient
+                        digital platform.
+                    </p>
+
+                    <div class="hero-actions">
+
+                        <a asp-area="Identity"
+                           asp-page="/Account/Register"
+                           class="btn btn-primary-custom btn-lg">
+                            Apply for a Loan
+                            <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+
+                        <a href="#loans" class="btn btn-outline-custom btn-lg">
+                            Explore Loan Products
+                        </a>
+
+                    </div>
+
+                    <p class="hero-note">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Create an account to get started. All applications
+                        are subject to eligibility and approval.
+                    </p>
+
+                </div>
+
+                <div class="col-lg-6">
+
+                    <div class="position-relative">
+
+                        <div class="hero-visual">
+
+                            <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1100&q=85"
+                                 alt="Person reviewing financial documents and planning finances" />
+
+                            <div class="hero-visual-overlay"></div>
+
+                            <div class="hero-visual-content">
+                                <h4>Your financial goals matter.</h4>
+                                <p>
+                                    Explore available loan options and take
+                                    your next step with Kredvanta.
+                                </p>
+                            </div>
+
+                        </div>
+
+                        <div class="floating-card">
+                            <i class="bi bi-laptop"></i>
+                            <strong>Digital Convenience</strong>
+                            <small>Manage your application online</small>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+
+
+    <!-- ABOUT SECTION -->
+    <section class="section-padding" id="about">
+
+        <div class="container">
+
+            <div class="row align-items-center g-5">
+
+                <div class="col-lg-6">
+
+                    <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1000&q=85"
+                         alt="People working together on business financial plans"
+                         class="about-image" />
+
+                </div>
+
+                <div class="col-lg-6 about-content">
+
+                    <span class="section-label">About Kredvanta</span>
+
+                    <h2>
+                        A smarter digital approach to borrowing.
+                    </h2>
+
+                    <p class="mt-3">
+                        Kredvanta is designed to make the loan application
+                        experience more convenient, organised and accessible.
+                        Our digital platform brings the essential steps of
+                        applying for a loan together in one place.
+                    </p>
+
+                    <div class="about-point">
+                        <i class="bi bi-person-check-fill"></i>
+                        <div>
+                            <strong>Create your own account</strong>
+                            <p class="mb-0">
+                                Register and establish your borrower profile.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="about-point">
+                        <i class="bi bi-file-earmark-check-fill"></i>
+                        <div>
+                            <strong>Submit your documents</strong>
+                            <p class="mb-0">
+                                Upload the required identification and
+                                supporting documents.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="about-point">
+                        <i class="bi bi-cash-stack"></i>
+                        <div>
+                            <strong>Explore loan opportunities</strong>
+                            <p class="mb-0">
+                                Review available products and submit an
+                                application that suits your needs.
+                            </p>
+                        </div>
+                    </div>
+
+                    <a asp-area="Identity"
+                       asp-page="/Account/Register"
+                       class="btn btn-primary-custom mt-4">
+                        Get Started
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- LOAN PRODUCTS -->
+    <section class="section-padding loan-section" id="loans">
+
+        <div class="container">
+
+            <div class="text-center mb-5">
+
+                <span class="section-label">Explore Your Options</span>
+
+                <h2 class="section-heading">
+                    Loan Products for Different Needs
+                </h2>
+
+                <p class="section-subtitle">
+                    Explore the different loan categories available on
+                    Kredvanta. Select an option to create your account
+                    and begin the application process.
+                </p>
+
+            </div>
+
+            <div class="row g-4">
+
+                <!-- PERSONAL LOAN -->
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="loan-card">
+
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=700&q=85"
+                             alt="Personal finance planning"
+                             class="loan-image" />
+
+                        <div class="loan-content">
+
+                            <span class="loan-tag">Personal Finance</span>
+
+                            <h4>Personal Loan</h4>
+
+                            <p>
+                                Explore financing options for personal
+                                financial needs, planned expenses and
+                                individual goals.
+                            </p>
+
+                            <a asp-area="Identity"
+                               asp-page="/Account/Register"
+                               class="loan-link">
+                                Apply for this Loan
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- BUSINESS LOAN -->
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="loan-card">
+
+                        <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=700&q=85"
+                             alt="Small business team planning"
+                             class="loan-image" />
+
+                        <div class="loan-content">
+
+                            <span class="loan-tag">Business Growth</span>
+
+                            <h4>Business Loan</h4>
+
+                            <p>
+                                Explore financing options for business
+                                operations, expansion and entrepreneurial
+                                activities.
+                            </p>
+
+                            <a asp-area="Identity"
+                               asp-page="/Account/Register"
+                               class="loan-link">
+                                Apply for this Loan
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- EMERGENCY LOAN -->
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="loan-card">
+
+                        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=700&q=85"
+                             alt="Person using a payment terminal"
+                             class="loan-image" />
+
+                        <div class="loan-content">
+
+                            <span class="loan-tag">Unexpected Needs</span>
+
+                            <h4>Emergency Loan</h4>
+
+                            <p>
+                                Explore potential financing options for
+                                unexpected expenses and urgent financial
+                                requirements.
+                            </p>
+
+                            <a asp-area="Identity"
+                               asp-page="/Account/Register"
+                               class="loan-link">
+                                Apply for this Loan
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- DEVELOPMENT LOAN -->
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="loan-card">
+
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=700&q=85"
+                             alt="Financial data and development planning"
+                             class="loan-image" />
+
+                        <div class="loan-content">
+
+                            <span class="loan-tag">Long-Term Goals</span>
+
+                            <h4>Development Loan</h4>
+
+                            <p>
+                                Explore financing options for development
+                                projects, investments and long-term
+                                improvement goals.
+                            </p>
+
+                            <a asp-area="Identity"
+                               asp-page="/Account/Register"
+                               class="loan-link">
+                                Apply for this Loan
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <p class="text-center loan-disclaimer mt-4">
+                These are illustrative loan categories. Actual products,
+                availability, eligibility requirements, interest rates,
+                amounts and repayment terms are subject to the products
+                offered and applicable approval conditions.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- FEATURES -->
+    <section class="section-padding">
+
+        <div class="container">
+
+            <div class="text-center mb-5">
+
+                <span class="section-label">Why Kredvanta?</span>
+
+                <h2 class="section-heading">
+                    Borrowing Made More Convenient
+                </h2>
+
+                <p class="section-subtitle">
+                    A digital experience designed to help borrowers
+                    manage important steps of their loan journey.
+                </p>
+
+            </div>
+
+            <div class="row g-4">
+
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="feature-card">
+
+                        <div class="feature-icon">
+                            <i class="bi bi-globe2"></i>
+                        </div>
+
+                        <h5>Online Access</h5>
+
+                        <p>
+                            Access your borrower account and manage
+                            your application through the digital platform.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="feature-card">
+
+                        <div class="feature-icon">
+                            <i class="bi bi-person-badge"></i>
+                        </div>
+
+                        <h5>Personal Profile</h5>
+
+                        <p>
+                            Maintain your borrower information and
+                            supporting details in one place.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="feature-card">
+
+                        <div class="feature-icon">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                        </div>
+
+                        <h5>Document Uploads</h5>
+
+                        <p>
+                            Submit identification and financial
+                            documents through your account.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="feature-card">
+
+                        <div class="feature-icon">
+                            <i class="bi bi-clipboard2-check"></i>
+                        </div>
+
+                        <h5>Application Tracking</h5>
+
+                        <p>
+                            Follow the progress and status of your
+                            loan application through your account.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- HOW IT WORKS -->
+    <section class="section-padding steps-section" id="how-it-works">
+
+        <div class="container">
+
+            <div class="text-center mb-5">
+
+                <span class="section-label">Getting Started</span>
+
+                <h2 class="section-heading">
+                    How Kredvanta Works
+                </h2>
+
+                <p class="section-subtitle">
+                    Start your borrowing journey by following these
+                    simple steps.
+                </p>
+
+            </div>
+
+            <div class="row g-4">
+
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="step-card">
+
+                        <div class="step-number">1</div>
+
+                        <h5>Create an Account</h5>
+
+                        <p>
+                            Register using your personal details
+                            to access your borrower account.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="step-card">
+
+                        <div class="step-number">2</div>
+
+                        <h5>Complete Your Profile</h5>
+
+                        <p>
+                            Provide the information required to
+                            establish your borrower profile.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="step-card">
+
+                        <div class="step-number">3</div>
+
+                        <h5>Upload Documents</h5>
+
+                        <p>
+                            Submit the identification and supporting
+                            documents required for verification.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+
+                    <div class="step-card">
+
+                        <div class="step-number">4</div>
+
+                        <h5>Apply for a Loan</h5>
+
+                        <p>
+                            Choose an available loan product, submit
+                            your application and follow its progress.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="text-center mt-4">
+
+                <a asp-area="Identity"
+                   asp-page="/Account/Register"
+                   class="btn btn-primary-custom btn-lg">
+                    Start Your Application
+                    <i class="bi bi-arrow-right ms-2"></i>
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- TRUST SECTION -->
+    <section class="section-padding trust-section">
+
+        <div class="container">
+
+            <div class="row align-items-center g-5">
+
+                <div class="col-lg-6">
+
+                    <span class="section-label">Your Journey Matters</span>
+
+                    <h2>
+                        Your financial journey, organised in one place.
+                    </h2>
+
+                    <p class="mt-3 mb-4">
+                        Kredvanta brings account registration, borrower
+                        profiles, document submission and loan applications
+                        together in a convenient digital experience.
+                    </p>
+
+                    <div class="trust-item">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>
+                            Convenient access to your borrower account.
+                        </span>
+                    </div>
+
+                    <div class="trust-item">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>
+                            Organised submission of supporting documents.
+                        </span>
+                    </div>
+
+                    <div class="trust-item">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>
+                            Visibility into your loan application progress.
+                        </span>
+                    </div>
+
+                    <a asp-area="Identity"
+                       asp-page="/Account/Register"
+                       class="btn btn-primary-custom mt-3">
+                        Create Your Account
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+
+                </div>
+
+                <div class="col-lg-6">
+
+                    <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1000&q=85"
+                         alt="People collaborating in a professional environment"
+                         class="trust-image" />
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- FINAL CALL TO ACTION -->
+    <section class="cta-section">
+
+        <div class="container">
+
+            <span class="section-label">Take the First Step</span>
+
+            <h2>
+                Ready to explore your loan options?
+            </h2>
+
+            <p>
+                Create your Kredvanta account, complete your borrower
+                profile and discover the loan products available to you.
+                Your journey starts with a simple registration.
+            </p>
+
+            <a asp-area="Identity"
+               asp-page="/Account/Register"
+               class="btn btn-primary-custom btn-lg">
+                Create Account & Apply Now
+                <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+
+            <p class="mt-3 mb-0 small">
+                Already have an account?
+                <a asp-area="Identity"
+                   asp-page="/Account/Login"
+                   class="text-white fw-bold text-decoration-underline">
+                    Sign in here
+                </a>
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- FOOTER -->
+    <footer id="contact">
+
+        <div class="container">
+
+            <div class="row g-4">
+
+                <div class="col-lg-4">
+
+                    <a asp-controller="Home"
+                       asp-action="Index"
+                       class="footer-brand">
+                        <i class="bi bi-mortarboard-fill"></i>
+                        Kred<span>vanta</span>
+                    </a>
+
+                    <p class="mt-3">
+                        A digital lending platform designed to make
+                        accessing and managing loan applications
+                        more convenient.
+                    </p>
+
+                </div>
+
+                <div class="col-md-4 col-lg-2">
+
+                    <h6 class="footer-title">Quick Links</h6>
+
+                    <div class="footer-links">
+                        <a href="#home">Home</a>
+                        <a href="#about">About Us</a>
+                        <a href="#loans">Loan Products</a>
+                        <a href="#how-it-works">How It Works</a>
+                    </div>
+
+                </div>
+
+                <div class="col-md-4 col-lg-3">
+
+                    <h6 class="footer-title">Your Account</h6>
+
+                    <div class="footer-links">
+                        <a asp-area="Identity" asp-page="/Account/Register">
+                            Create Account
+                        </a>
+
+                        <a asp-area="Identity" asp-page="/Account/Login">
+                            Sign In
+                        </a>
+                    </div>
+
+                </div>
+
+                <div class="col-md-4 col-lg-3">
+
+                    <h6 class="footer-title">Get Started</h6>
+
+                    <p>
+                        Ready to explore your borrowing options?
+                        Create your account and begin your journey.
+                    </p>
+
+                    <a asp-area="Identity"
+                       asp-page="/Account/Register"
+                       class="btn btn-primary-custom">
+                        Apply Now
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="footer-bottom text-center">
+
+                <p class="mb-0">
+                    &copy; @DateTime.Now.Year Kredvanta.
+                    All rights reserved.
+                </p>
+
+            </div>
+
+        </div>
+
+    </footer>
+
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+    </script>
+
+</body>
+</html>
+

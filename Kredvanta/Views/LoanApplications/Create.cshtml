@@ -1,0 +1,484 @@
+﻿@model Kredvanta.ViewModels.LoanApplications.CreateLoanApplicationViewModel
+
+@{
+    ViewData["Title"] = "Apply for a Loan";
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+
+    <!-- Page heading -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <span class="text-primary small fw-semibold">KREDVANTA / LOAN APPLICATIONS</span>
+            <h2 class="fw-bold mb-1 mt-1">New Loan Application</h2>
+            <p class="text-muted mb-0">
+                Complete the information below to request financing.
+            </p>
+        </div>
+
+        <a asp-controller="LoanApplications"
+           asp-action="Index"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>
+            My Applications
+        </a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+
+        <!-- Main application form -->
+        <div class="col-lg-8">
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-lg-5">
+
+                    <div class="mb-4">
+                        <h5 class="fw-bold mb-1">Loan Request Details</h5>
+                        <p class="text-muted small mb-0">
+                            Provide accurate information to help us assess your request.
+                        </p>
+                    </div>
+
+                    <form asp-controller="LoanApplications"
+                          asp-action="Create"
+                          method="post">
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="alert alert-danger"
+                             role="alert"></div>
+
+                        <!-- Loan product -->
+                        <div class="mb-4">
+                            <label asp-for="LoanProductId"
+                                   class="form-label fw-semibold">
+                                Loan Product <span class="text-danger">*</span>
+                            </label>
+
+                            <select asp-for="LoanProductId"
+                                    class="form-select form-select-lg"
+                                    id="loanProductSelect">
+
+                                <option value="">-- Select a loan product --</option>
+
+                                @foreach (var product in Model.AvailableProducts)
+                                {
+                                    <option value="@product.Id"
+                                            data-min="@product.MinimumAmount"
+                                            data-max="@product.MaximumAmount"
+                                            data-rate="@product.AnnualInterestRate"
+                                            data-min-term="@product.MinimumTermPeriods"
+                                            data-max-term="@product.MaximumTermPeriods"
+                                            data-frequency="@product.RepaymentFrequency"
+                                            data-interest="@product.InterestMethod"
+                                            data-description="@product.Description">
+
+                                        @product.ProductName (@product.ProductCode)
+                                    </option>
+                                }
+                            </select>
+
+                            <span asp-validation-for="LoanProductId"
+                                  class="text-danger small"></span>
+
+                            <div class="form-text">
+                                Choose the loan product you want to apply for.
+                            </div>
+                        </div>
+
+                        <!-- Selected product information -->
+                        <div id="productInformation"
+                             class="border rounded-3 p-4 mb-4 d-none">
+
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <div class="rounded-3 bg-primary-subtle text-primary p-2">
+                                    <i class="bi bi-info-circle fs-5"></i>
+                                </div>
+
+                                <div>
+                                    <h6 class="fw-bold mb-0">Product Information</h6>
+                                    <small class="text-muted">
+                                        Review the terms before proceeding.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <p id="productDescription"
+                               class="text-muted small mb-3"></p>
+
+                            <div class="row g-3">
+
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">Minimum Amount</small>
+                                    <strong id="minimumAmount">KES 0.00</strong>
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">Maximum Amount</small>
+                                    <strong id="maximumAmount">KES 0.00</strong>
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">Annual Interest Rate</small>
+                                    <strong id="interestRate">0%</strong>
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">Interest Method</small>
+                                    <strong id="interestMethod">-</strong>
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">Repayment Frequency</small>
+                                    <strong id="repaymentFrequency">-</strong>
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">Available Repayment Terms</small>
+                                    <strong id="termRange">-</strong>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Requested amount -->
+                        <div class="mb-4">
+                            <label asp-for="RequestedAmount"
+                                   class="form-label fw-semibold">
+                                Requested Loan Amount (KES)
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">KES</span>
+
+                                <input asp-for="RequestedAmount"
+                                       class="form-control"
+                                       type="number"
+                                       min="1"
+                                       step="0.01"
+                                       placeholder="Enter requested amount"
+                                       id="requestedAmount" />
+                            </div>
+
+                            <span asp-validation-for="RequestedAmount"
+                                  class="text-danger small"></span>
+
+                            <div class="form-text" id="amountHelp">
+                                Select a loan product to view its amount limits.
+                            </div>
+                        </div>
+
+                        <!-- Requested term -->
+                        <div class="mb-4">
+                            <label asp-for="RequestedTermPeriods"
+                                   class="form-label fw-semibold">
+                                Requested Repayment Term
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <div class="input-group input-group-lg">
+                                <input asp-for="RequestedTermPeriods"
+                                       class="form-control"
+                                       type="number"
+                                       min="1"
+                                       max="120"
+                                       placeholder="Enter repayment term"
+                                       id="requestedTerm" />
+
+                                <span class="input-group-text" id="termUnit">
+                                    Periods
+                                </span>
+                            </div>
+
+                            <span asp-validation-for="RequestedTermPeriods"
+                                  class="text-danger small"></span>
+
+                            <div class="form-text" id="termHelp">
+                                Select a loan product to view its repayment terms.
+                            </div>
+                        </div>
+
+                        <!-- Loan purpose -->
+                        <div class="mb-4">
+                            <label asp-for="LoanPurpose"
+                                   class="form-label fw-semibold">
+                                Purpose of Loan <span class="text-danger">*</span>
+                            </label>
+
+                            <textarea asp-for="LoanPurpose"
+                                      class="form-control"
+                                      rows="5"
+                                      maxlength="1000"
+                                      placeholder="Explain why you need this loan and how you intend to use the funds..."
+                                      id="loanPurpose"></textarea>
+
+                            <span asp-validation-for="LoanPurpose"
+                                  class="text-danger small"></span>
+
+                            <div class="d-flex justify-content-between mt-1">
+                                <div class="form-text">
+                                    Explain your intended use of the funds.
+                                </div>
+                                <small class="text-muted">
+                                    <span id="purposeCount">0</span>/1000
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Important notice -->
+                        <div class="alert alert-info border-0 rounded-3">
+                            <div class="d-flex gap-2">
+                                <i class="bi bi-shield-check fs-5"></i>
+                                <div>
+                                    <strong>Before you continue</strong>
+                                    <p class="small mb-0">
+                                        Saving this form creates a draft application.
+                                        You will be able to review your application
+                                        and upload the required supporting documents
+                                        before submitting it for assessment.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form actions -->
+                        <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+
+                            <a asp-controller="LoanApplications"
+                               asp-action="Index"
+                               class="btn btn-light border px-4">
+                                Cancel
+                            </a>
+
+                            <button type="submit"
+                                    class="btn btn-primary px-4">
+                                <i class="bi bi-save me-2"></i>
+                                Save Application Draft
+                            </button>
+
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+
+                    <div class="rounded-3 bg-primary-subtle text-primary d-inline-flex p-3 mb-3">
+                        <i class="bi bi-lightbulb fs-3"></i>
+                    </div>
+
+                    <h5 class="fw-bold">Application Guide</h5>
+
+                    <p class="text-muted small">
+                        Follow these steps to complete your application.
+                    </p>
+
+                    <div class="d-flex gap-3 mb-3">
+                        <span class="badge bg-primary rounded-circle align-self-start">1</span>
+                        <div>
+                            <strong>Select a product</strong>
+                            <p class="text-muted small mb-0">
+                                Choose an appropriate loan product.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 mb-3">
+                        <span class="badge bg-primary rounded-circle align-self-start">2</span>
+                        <div>
+                            <strong>Enter loan details</strong>
+                            <p class="text-muted small mb-0">
+                                Specify the amount and repayment period.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 mb-3">
+                        <span class="badge bg-primary rounded-circle align-self-start">3</span>
+                        <div>
+                            <strong>Explain your purpose</strong>
+                            <p class="text-muted small mb-0">
+                                Describe how you intend to use the funds.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3">
+                        <span class="badge bg-primary rounded-circle align-self-start">4</span>
+                        <div>
+                            <strong>Save and continue</strong>
+                            <p class="text-muted small mb-0">
+                                Review your draft and upload supporting documents.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold">
+                        <i class="bi bi-lock text-success me-2"></i>
+                        Your Information Is Protected
+                    </h6>
+
+                    <p class="text-muted small mb-0">
+                        Your application is associated with your authenticated
+                        borrower account. Application information and documents
+                        are handled through the authorised lending workflow.
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const productSelect = document.getElementById("loanProductSelect");
+            const productInformation = document.getElementById("productInformation");
+
+            const requestedAmount = document.getElementById("requestedAmount");
+            const requestedTerm = document.getElementById("requestedTerm");
+
+            const amountHelp = document.getElementById("amountHelp");
+            const termHelp = document.getElementById("termHelp");
+            const termUnit = document.getElementById("termUnit");
+
+            const loanPurpose = document.getElementById("loanPurpose");
+            const purposeCount = document.getElementById("purposeCount");
+
+            function formatCurrency(value) {
+                return "KES " + Number(value).toLocaleString("en-KE", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            function updatePurposeCount() {
+                purposeCount.textContent = loanPurpose.value.length;
+            }
+
+            function updateProductInformation() {
+
+                const selectedOption =
+                    productSelect.options[productSelect.selectedIndex];
+
+                if (!selectedOption || !selectedOption.value) {
+
+                    productInformation.classList.add("d-none");
+
+                    requestedAmount.min = "1";
+                    requestedAmount.removeAttribute("max");
+
+                    requestedTerm.min = "1";
+                    requestedTerm.max = "120";
+
+                    amountHelp.textContent =
+                        "Select a loan product to view its amount limits.";
+
+                    termHelp.textContent =
+                        "Select a loan product to view its repayment terms.";
+
+                    termUnit.textContent = "Periods";
+
+                    return;
+                }
+
+                const minAmount = Number(selectedOption.dataset.min);
+                const maxAmount = Number(selectedOption.dataset.max);
+                const minTerm = Number(selectedOption.dataset.minTerm);
+                const maxTerm = Number(selectedOption.dataset.maxTerm);
+
+                const frequency = selectedOption.dataset.frequency;
+
+                productInformation.classList.remove("d-none");
+
+                document.getElementById("productDescription").textContent =
+                    selectedOption.dataset.description ||
+                    "No product description is available.";
+
+                document.getElementById("minimumAmount").textContent =
+                    formatCurrency(minAmount);
+
+                document.getElementById("maximumAmount").textContent =
+                    formatCurrency(maxAmount);
+
+                document.getElementById("interestRate").textContent =
+                    selectedOption.dataset.rate + "%";
+
+                document.getElementById("interestMethod").textContent =
+                    selectedOption.dataset.interest;
+
+                document.getElementById("repaymentFrequency").textContent =
+                    frequency;
+
+                document.getElementById("termRange").textContent =
+                    minTerm + " - " + maxTerm + " " + frequency;
+
+                // Apply the selected product's limits to the form.
+                requestedAmount.min = minAmount;
+                requestedAmount.max = maxAmount;
+
+                requestedTerm.min = minTerm;
+                requestedTerm.max = maxTerm;
+
+                termUnit.textContent = frequency;
+
+                // Clear values that are invalid for the newly selected product.
+                const currentAmount = Number(requestedAmount.value);
+
+                if (requestedAmount.value &&
+                    (currentAmount < minAmount || currentAmount > maxAmount)) {
+                    requestedAmount.value = "";
+                }
+
+                const currentTerm = Number(requestedTerm.value);
+
+                if (requestedTerm.value &&
+                    (currentTerm < minTerm || currentTerm > maxTerm)) {
+                    requestedTerm.value = "";
+                }
+
+                amountHelp.textContent =
+                    "Allowed amount: " + formatCurrency(minAmount) +
+                    " to " + formatCurrency(maxAmount) + ".";
+
+                termHelp.textContent =
+                    "Allowed repayment term: " + minTerm +
+                    " to " + maxTerm + " " + frequency + ".";
+
+            }
+
+            productSelect.addEventListener("change", updateProductInformation);
+
+            loanPurpose.addEventListener("input", updatePurposeCount);
+
+            // Restore information for a preselected product or validation response.
+            updateProductInformation();
+            updatePurposeCount();
+
+        });
+    </script>
+}

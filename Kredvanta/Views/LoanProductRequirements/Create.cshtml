@@ -1,0 +1,258 @@
+﻿@model Kredvanta.ViewModels.LoanProducts.LoanProductRequirementViewModel
+
+@{
+    ViewData["Title"] = "Add Document Requirement";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Add Document Requirement</h2>
+            <p class="text-muted mb-0">
+                Configure the documents borrowers must provide for this loan product.
+            </p>
+        </div>
+
+        <a asp-action="Index"
+           asp-route-loanProductId="@Model.LoanProductId"
+           class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>
+            Back to Requirements
+        </a>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-lg-8">
+
+            <form asp-action="Create" method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" asp-for="LoanProductId" />
+
+                <div asp-validation-summary="ModelOnly"
+                     class="alert alert-danger"></div>
+
+                <!-- Product Information -->
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-box-seam text-primary me-2"></i>
+                            Selected Loan Product
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+                        <label class="form-label fw-semibold">Product Name</label>
+
+                        <input class="form-control bg-light"
+                               value="@Model.LoanProductName"
+                               readonly />
+                    </div>
+
+                </div>
+
+                <!-- Document Information -->
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-file-earmark-text text-primary me-2"></i>
+                            Document Information
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="mb-3">
+                            <label asp-for="DocumentName"
+                                   class="form-label fw-semibold"></label>
+
+                            <input asp-for="DocumentName"
+                                   class="form-control"
+                                   placeholder="e.g. Recent Payslips" />
+
+                            <span asp-validation-for="DocumentName"
+                                  class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description"
+                                   class="form-label fw-semibold"></label>
+
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Describe what the borrower should upload..."></textarea>
+
+                            <span asp-validation-for="Description"
+                                  class="text-danger small"></span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Document Period -->
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-calendar-range text-primary me-2"></i>
+                            Document Coverage Period
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <label asp-for="RequiredPeriodMonths"
+                               class="form-label fw-semibold"></label>
+
+                        <div class="input-group">
+                            <input asp-for="RequiredPeriodMonths"
+                                   type="number"
+                                   min="1"
+                                   max="120"
+                                   class="form-control"
+                                   placeholder="e.g. 3" />
+
+                            <span class="input-group-text">Months</span>
+                        </div>
+
+                        <span asp-validation-for="RequiredPeriodMonths"
+                              class="text-danger small"></span>
+
+                        <div class="form-text">
+                            Leave blank if the document does not have a specific coverage period.
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Requirement Settings -->
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-sliders text-primary me-2"></i>
+                            Requirement Settings
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="form-check form-switch mb-4">
+                            <input asp-for="IsMandatory"
+                                   class="form-check-input"
+                                   role="switch" />
+
+                            <label asp-for="IsMandatory"
+                                   class="form-check-label fw-semibold"></label>
+
+                            <div class="form-text">
+                                Borrowers must submit this document before submitting their application.
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive"
+                                   class="form-check-input"
+                                   role="switch" />
+
+                            <label asp-for="IsActive"
+                                   class="form-check-label fw-semibold"></label>
+
+                            <div class="form-text">
+                                Only active requirements are displayed to borrowers.
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex justify-content-end gap-2">
+
+                    <a asp-action="Index"
+                       asp-route-loanProductId="@Model.LoanProductId"
+                       class="btn btn-light border">
+                        Cancel
+                    </a>
+
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Save Requirement
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+        <!-- Guidance Panel -->
+        <div class="col-lg-4">
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-lightbulb text-warning me-2"></i>
+                        Configuration Guide
+                    </h5>
+                </div>
+
+                <div class="card-body">
+
+                    <h6 class="fw-semibold">Document Names</h6>
+                    <p class="text-muted small">
+                        Use clear names such as Bank Statements, Payslips,
+                        Employment Letters and National ID.
+                    </p>
+
+                    <hr />
+
+                    <h6 class="fw-semibold">Coverage Period</h6>
+                    <p class="text-muted small">
+                        Financial documents may require a specific number
+                        of months of transaction history.
+                    </p>
+
+                    <hr />
+
+                    <h6 class="fw-semibold">Mandatory Documents</h6>
+                    <p class="text-muted small">
+                        Mark essential documents as mandatory. Optional
+                        documents can provide additional supporting information.
+                    </p>
+
+                    <hr />
+
+                    <h6 class="fw-semibold">Activation</h6>
+                    <p class="text-muted small mb-0">
+                        Deactivate a requirement when it should no longer
+                        be requested without deleting its historical record.
+                    </p>
+
+                </div>
+            </div>
+
+            <div class="alert alert-info border-0">
+                <i class="bi bi-info-circle me-2"></i>
+                These requirements apply exclusively to
+                <strong>@Model.LoanProductName</strong>.
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

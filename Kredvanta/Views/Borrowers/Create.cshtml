@@ -1,0 +1,303 @@
+﻿@model Kredvanta.ViewModels.Borrowers.BorrowerCreateViewModel
+
+@using static Kredvanta.Models.Enums.LendingEnums
+
+@{
+    ViewData["Title"] = "Register Borrower";
+}
+
+<div class="container-fluid py-4">
+
+    <!-- Page heading -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Register New Borrower</h2>
+            <p class="text-muted mb-0">
+                Capture the borrower's personal and financial information.
+            </p>
+        </div>
+
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Borrowers
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post">
+
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly"
+             class="alert alert-danger"
+             role="alert"></div>
+
+        <!-- Personal information -->
+        <div class="card border-0 shadow-sm mb-4">
+
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="bi bi-person-circle text-primary me-2"></i>
+                    Personal Information
+                </h5>
+            </div>
+
+            <div class="card-body p-4">
+
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label asp-for="FirstName" class="form-label">
+                            First Name <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="FirstName"
+                               class="form-control"
+                               placeholder="Enter first name" />
+                        <span asp-validation-for="FirstName"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="MiddleName" class="form-label">
+                            Middle Name
+                        </label>
+                        <input asp-for="MiddleName"
+                               class="form-control"
+                               placeholder="Enter middle name" />
+                        <span asp-validation-for="MiddleName"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="LastName" class="form-label">
+                            Last Name <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="LastName"
+                               class="form-control"
+                               placeholder="Enter last name" />
+                        <span asp-validation-for="LastName"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="DateOfBirth" class="form-label">
+                            Date of Birth <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="DateOfBirth"
+                               type="date"
+                               class="form-control" />
+                        <span asp-validation-for="DateOfBirth"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Gender" class="form-label">
+                            Gender <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="Gender"
+                                asp-items="Html.GetEnumSelectList<Gender>()"
+                                class="form-select">
+                            <option value="">Select gender</option>
+                        </select>
+                        <span asp-validation-for="Gender"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="NationalIdNumber" class="form-label">
+                            National ID Number <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="NationalIdNumber"
+                               class="form-control"
+                               placeholder="Enter national ID number" />
+                        <span asp-validation-for="NationalIdNumber"
+                              class="text-danger small"></span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact information -->
+        <div class="card border-0 shadow-sm mb-4">
+
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="bi bi-telephone text-primary me-2"></i>
+                    Contact Information
+                </h5>
+            </div>
+
+            <div class="card-body p-4">
+
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label asp-for="PhoneNumber" class="form-label">
+                            Primary Phone Number <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="PhoneNumber"
+                               class="form-control"
+                               placeholder="e.g. 0712345678" />
+                        <span asp-validation-for="PhoneNumber"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="AlternativePhoneNumber" class="form-label">
+                            Alternative Phone Number
+                        </label>
+                        <input asp-for="AlternativePhoneNumber"
+                               class="form-control"
+                               placeholder="Optional phone number" />
+                        <span asp-validation-for="AlternativePhoneNumber"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Email" class="form-label">
+                            Email Address
+                        </label>
+                        <input asp-for="Email"
+                               type="email"
+                               class="form-control"
+                               placeholder="example@email.com" />
+                        <span asp-validation-for="Email"
+                              class="text-danger small"></span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Location information -->
+        <div class="card border-0 shadow-sm mb-4">
+
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="bi bi-geo-alt text-primary me-2"></i>
+                    Location Information
+                </h5>
+            </div>
+
+            <div class="card-body p-4">
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label asp-for="County" class="form-label">
+                            County <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="County"
+                               class="form-control"
+                               placeholder="e.g. Nairobi" />
+                        <span asp-validation-for="County"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="SubCounty" class="form-label">
+                            Sub-County
+                        </label>
+                        <input asp-for="SubCounty"
+                               class="form-control"
+                               placeholder="Enter sub-county" />
+                        <span asp-validation-for="SubCounty"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="PhysicalAddress" class="form-label">
+                            Physical Address
+                        </label>
+                        <textarea asp-for="PhysicalAddress"
+                                  class="form-control"
+                                  rows="2"
+                                  placeholder="Enter residential or business address"></textarea>
+                        <span asp-validation-for="PhysicalAddress"
+                              class="text-danger small"></span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Employment and financial information -->
+        <div class="card border-0 shadow-sm mb-4">
+
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-semibold">
+                    <i class="bi bi-briefcase text-primary me-2"></i>
+                    Employment and Financial Information
+                </h5>
+            </div>
+
+            <div class="card-body p-4">
+
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label asp-for="EmploymentType" class="form-label">
+                            Employment Type <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="EmploymentType"
+                                asp-items="Html.GetEnumSelectList<EmploymentType>()"
+                                class="form-select">
+                            <option value="">Select employment type</option>
+                        </select>
+                        <span asp-validation-for="EmploymentType"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="EmployerOrBusinessName" class="form-label">
+                            Employer / Business Name
+                        </label>
+                        <input asp-for="EmployerOrBusinessName"
+                               class="form-control"
+                               placeholder="Enter employer or business name" />
+                        <span asp-validation-for="EmployerOrBusinessName"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="MonthlyIncome" class="form-label">
+                            Monthly Income (KES)
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">KES</span>
+                            <input asp-for="MonthlyIncome"
+                                   type="number"
+                                   min="0"
+                                   step="0.01"
+                                   class="form-control"
+                                   placeholder="0.00" />
+                        </div>
+                        <span asp-validation-for="MonthlyIncome"
+                              class="text-danger small"></span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Form actions -->
+        <div class="d-flex justify-content-end gap-2 mb-4">
+
+            <a asp-action="Index"
+               class="btn btn-light border px-4">
+                Cancel
+            </a>
+
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-person-plus me-1"></i>
+                Register Borrower
+            </button>
+
+        </div>
+
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

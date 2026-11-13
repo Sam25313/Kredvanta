@@ -1,0 +1,693 @@
+﻿@using Kredvanta.ViewModels.Dashboard
+@using static Kredvanta.Models.Enums.LendingEnums
+
+@model AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Administrator Dashboard";
+    Layout = "_AdminLayout";
+
+    string ApplicationStatusClass(LoanApplicationStatus status)
+    {
+        return status switch
+        {
+            LoanApplicationStatus.Draft => "bg-secondary-subtle text-secondary",
+            LoanApplicationStatus.Submitted => "bg-primary-subtle text-primary",
+            LoanApplicationStatus.UnderReview => "bg-warning-subtle text-warning-emphasis",
+            LoanApplicationStatus.DocumentsRequired => "bg-info-subtle text-info-emphasis",
+            LoanApplicationStatus.Recommended => "bg-primary-subtle text-primary",
+            LoanApplicationStatus.Approved => "bg-success-subtle text-success",
+            LoanApplicationStatus.Rejected => "bg-danger-subtle text-danger",
+            LoanApplicationStatus.Cancelled => "bg-secondary-subtle text-secondary",
+            _ => "bg-secondary-subtle text-secondary"
+        };
+    }
+
+    string RepaymentStatusClass(RepaymentStatus status)
+    {
+        return status switch
+        {
+            RepaymentStatus.Confirmed => "bg-success-subtle text-success",
+            RepaymentStatus.Pending => "bg-warning-subtle text-warning-emphasis",
+            RepaymentStatus.Failed => "bg-danger-subtle text-danger",
+            RepaymentStatus.Reversed => "bg-secondary-subtle text-secondary",
+            _ => "bg-secondary-subtle text-secondary"
+        };
+    }
+}
+
+<div class="container-fluid py-4">
+
+    <!-- PAGE HEADER -->
+
+    <div class="d-flex flex-wrap justify-content-between
+        align-items-center mb-4">
+
+        <div>
+            <span class="text-primary fw-semibold small">
+                KREDVANTA MANAGEMENT
+            </span>
+
+            <h2 class="fw-bold mb-1">
+                Administrator Dashboard
+            </h2>
+
+            <p class="text-muted mb-0">
+                Monitor users, lending operations and financial performance.
+            </p>
+        </div>
+
+        <div class="mt-3 mt-md-0">
+            <span class="badge rounded-pill bg-primary-subtle
+                text-primary px-3 py-2">
+                <i class="bi bi-shield-check me-1"></i>
+                Administrator
+            </span>
+        </div>
+
+    </div>
+
+
+    <!-- QUICK ACTIONS -->
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4 col-lg-3">
+            <a asp-controller="LoanProducts"
+               asp-action="Index"
+               class="btn btn-primary w-100 py-3">
+
+                <i class="bi bi-box-seam me-2"></i>
+                Manage Loan Products
+
+            </a>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <a asp-controller="Borrowers"
+               asp-action="Index"
+               class="btn btn-outline-primary w-100 py-3">
+
+                <i class="bi bi-people me-2"></i>
+                Manage Borrowers
+
+            </a>
+        </div>
+
+        <div class="col-md-4 col-lg-3">
+            <a asp-controller="LoanApplications"
+               asp-action="Index"
+               class="btn btn-outline-primary w-100 py-3">
+
+                <i class="bi bi-file-earmark-text me-2"></i>
+                Loan Applications
+
+            </a>
+        </div>
+
+    </div>
+
+
+    <!-- USER AND PRODUCT STATISTICS -->
+
+    <h5 class="fw-bold mb-3">System Overview</h5>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Total Users</p>
+                            <h3 class="fw-bold mb-1">
+                                @Model.TotalUsers
+                            </h3>
+                            <small class="text-success">
+                                @Model.ActiveUsers active accounts
+                            </small>
+                        </div>
+
+                        <div class="rounded-3 bg-primary-subtle
+                            text-primary p-3">
+                            <i class="bi bi-people fs-4"></i>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Borrowers</p>
+                            <h3 class="fw-bold mb-1">
+                                @Model.TotalBorrowers
+                            </h3>
+                            <small class="text-muted">
+                                Registered borrower profiles
+                            </small>
+                        </div>
+
+                        <div class="rounded-3 bg-info-subtle
+                            text-info p-3">
+                            <i class="bi bi-person-vcard fs-4"></i>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Loan Products</p>
+                            <h3 class="fw-bold mb-1">
+                                @Model.TotalLoanProducts
+                            </h3>
+                            <small class="text-success">
+                                @Model.ActiveLoanProducts active
+                            </small>
+                        </div>
+
+                        <div class="rounded-3 bg-success-subtle
+                            text-success p-3">
+                            <i class="bi bi-box-seam fs-4"></i>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-1">Applications</p>
+                            <h3 class="fw-bold mb-1">
+                                @Model.TotalApplications
+                            </h3>
+                            <small class="text-warning-emphasis">
+                                @Model.PendingApplications pending
+                            </small>
+                        </div>
+
+                        <div class="rounded-3 bg-warning-subtle
+                            text-warning-emphasis p-3">
+                            <i class="bi bi-file-earmark-text fs-4"></i>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- LOAN PRODUCT AVAILABILITY -->
+
+        <div class="d-flex flex-wrap justify-content-between
+            align-items-center mb-3">
+
+            <div>
+                <h5 class="fw-bold mb-1">
+                    Loan Product Availability
+                </h5>
+
+                <small class="text-muted">
+                    Monitor products currently visible and open for applications.
+                </small>
+            </div>
+
+            <a asp-controller="LoanProducts"
+               asp-action="Index"
+               class="btn btn-sm btn-outline-primary mt-2 mt-md-0">
+
+                <i class="bi bi-gear me-1"></i>
+                Manage Products
+
+            </a>
+
+        </div>
+
+        <div class="row g-3 mb-4">
+
+            <!-- AVAILABLE PRODUCTS -->
+
+            <div class="col-md-6">
+
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+
+                    <div class="card-body p-4">
+
+                        <div class="d-flex justify-content-between
+                            align-items-center">
+
+                            <div>
+                                <p class="text-muted mb-1">
+                                    Available for Applications
+                                </p>
+
+                                <h2 class="fw-bold text-success mb-1">
+                                    @Model.AvailableLoanProducts
+                                </h2>
+
+                                <small class="text-muted">
+                                    Active products accepting applications
+                                </small>
+                            </div>
+
+                            <div class="rounded-3 bg-success-subtle
+                                text-success p-3">
+
+                                <i class="bi bi-check-circle fs-3"></i>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- UNAVAILABLE PRODUCTS -->
+
+            <div class="col-md-6">
+
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+
+                    <div class="card-body p-4">
+
+                        <div class="d-flex justify-content-between
+                            align-items-center">
+
+                            <div>
+                                <p class="text-muted mb-1">
+                                    Temporarily Unavailable
+                                </p>
+
+                                <h2 class="fw-bold text-warning mb-1">
+                                    @Model.UnavailableLoanProducts
+                                </h2>
+
+                                <small class="text-muted">
+                                    Active products not accepting applications
+                                </small>
+                            </div>
+
+                            <div class="rounded-3 bg-warning-subtle
+                                text-warning p-3">
+
+                                <i class="bi bi-pause-circle fs-3"></i>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- APPLICATION OVERVIEW -->
+
+    <h5 class="fw-bold mb-3">Loan Application Overview</h5>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Pending</p>
+                    <h3 class="fw-bold text-warning">
+                        @Model.PendingApplications
+                    </h3>
+                    <small class="text-muted">
+                        Awaiting completion or decision
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Under Review</p>
+                    <h3 class="fw-bold text-primary">
+                        @Model.ApplicationsUnderReview
+                    </h3>
+                    <small class="text-muted">
+                        Being assessed by staff
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Approved</p>
+                    <h3 class="fw-bold text-success">
+                        @Model.ApprovedApplications
+                    </h3>
+                    <small class="text-muted">
+                        Applications approved
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Rejected</p>
+                    <h3 class="fw-bold text-danger">
+                        @Model.RejectedApplications
+                    </h3>
+                    <small class="text-muted">
+                        Applications rejected
+                    </small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- LOAN PORTFOLIO -->
+
+    <h5 class="fw-bold mb-3">Loan Portfolio</h5>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+
+                    <p class="text-muted mb-1">Total Disbursed Principal</p>
+
+                    <h3 class="fw-bold text-primary">
+                        KES @Model.TotalDisbursedPrincipal.ToString("N2")
+                    </h3>
+
+                    <small class="text-muted">
+                        Loans with a recorded disbursement date
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+
+                    <p class="text-muted mb-1">Outstanding Balance</p>
+
+                    <h3 class="fw-bold text-danger">
+                        KES @Model.TotalOutstandingBalance.ToString("N2")
+                    </h3>
+
+                    <small class="text-muted">
+                        Remaining loan balances
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+
+                    <p class="text-muted mb-1">Confirmed Repayments</p>
+
+                    <h3 class="fw-bold text-success">
+                        KES @Model.TotalConfirmedRepayments.ToString("N2")
+                    </h3>
+
+                    <small class="text-muted">
+                        Successfully confirmed payments
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- LOAN AND REPAYMENT COUNTS -->
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Total Loans</p>
+                    <h3 class="fw-bold">@Model.TotalLoans</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Active Loans</p>
+                    <h3 class="fw-bold text-success">
+                        @Model.ActiveLoans
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Overdue Loans</p>
+                    <h3 class="fw-bold text-danger">
+                        @Model.OverdueLoans
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <p class="text-muted mb-1">Pending Repayments</p>
+                    <h3 class="fw-bold text-warning">
+                        @Model.PendingRepayments
+                    </h3>
+                    <small class="text-muted">
+                        Of @Model.TotalRepayments total transactions
+                    </small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- RECENT APPLICATIONS -->
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+
+        <div class="card-header bg-white border-0
+            p-4 d-flex justify-content-between
+            align-items-center">
+
+            <div>
+                <h5 class="fw-bold mb-1">
+                    Recent Loan Applications
+                </h5>
+                <small class="text-muted">
+                    Latest applications registered in Kredvanta
+                </small>
+            </div>
+
+            <a asp-controller="LoanApplications"
+               asp-action="Index"
+               class="btn btn-sm btn-outline-primary">
+                View All
+            </a>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table align-middle mb-0">
+
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Application</th>
+                        <th>Borrower</th>
+                        <th>Product</th>
+                        <th>Requested Amount</th>
+                        <th>Status</th>
+                        <th>Date Submitted</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.RecentApplications.Any())
+                    {
+                        @foreach (var application in Model.RecentApplications)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-semibold">
+                                    @application.ApplicationNumber
+                                </td>
+
+                                <td>
+                                    @application.BorrowerName
+                                </td>
+
+                                <td>
+                                    @application.ProductName
+                                </td>
+
+                                <td class="fw-semibold">
+                                    KES @application.RequestedAmount.ToString("N2")
+                                </td>
+
+                                <td>
+                                    <span class="badge rounded-pill px-3 py-2
+                                        @ApplicationStatusClass(application.Status)">
+                                        @application.Status
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @(application.SubmittedAt?.ToString("dd MMM yyyy") ?? "Not submitted")
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                No loan applications found.
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- RECENT REPAYMENTS -->
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+
+        <div class="card-header bg-white border-0 p-4">
+
+            <h5 class="fw-bold mb-1">
+                Recent Repayments
+            </h5>
+
+            <small class="text-muted">
+                Latest repayment transactions
+            </small>
+
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table align-middle mb-0">
+
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Receipt</th>
+                        <th>Loan Number</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date Received</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.RecentRepayments.Any())
+                    {
+                        @foreach (var repayment in Model.RecentRepayments)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-semibold">
+                                    @repayment.ReceiptNumber
+                                </td>
+
+                                <td>
+                                    @repayment.LoanNumber
+                                </td>
+
+                                <td class="fw-semibold">
+                                    @repayment.CurrencyCode
+                                    @repayment.Amount.ToString("N2")
+                                </td>
+
+                                <td>
+                                    <span class="badge rounded-pill px-3 py-2
+                                        @RepaymentStatusClass(repayment.Status)">
+                                        @repayment.Status
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @repayment.ReceivedAt.ToString("dd MMM yyyy, HH:mm")
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-cash-stack fs-2 d-block mb-2"></i>
+                                No repayment transactions found.
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

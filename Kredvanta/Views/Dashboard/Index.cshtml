@@ -1,0 +1,1213 @@
+﻿@using Kredvanta.ViewModels.Dashboard
+@using static Kredvanta.Models.Enums.LendingEnums
+@model BorrowerDashboardViewModel
+
+@{
+    ViewData["Title"] = "My Dashboard";
+    Layout = "_Layout";
+
+    string FormatStatus(string status)
+    {
+        return System.Text.RegularExpressions.Regex.Replace(
+            status, "([a-z])([A-Z])", "$1 $2");
+    }
+
+    string ApplicationStatusClass(LoanApplicationStatus status)
+    {
+        return status switch
+        {
+            LoanApplicationStatus.Approved => "status-success",
+            LoanApplicationStatus.Rejected => "status-danger",
+            LoanApplicationStatus.Submitted => "status-info",
+            LoanApplicationStatus.UnderReview => "status-warning",
+            LoanApplicationStatus.DocumentsRequired => "status-warning",
+            LoanApplicationStatus.Recommended => "status-primary",
+            LoanApplicationStatus.Cancelled => "status-secondary",
+            _ => "status-secondary"
+        };
+    }
+
+    string LoanStatusClass(LoanStatus status)
+    {
+        return status switch
+        {
+            LoanStatus.Active => "status-success",
+            LoanStatus.Completed => "status-info",
+            LoanStatus.Overdue => "status-danger",
+            LoanStatus.Restructured => "status-warning",
+            LoanStatus.PendingDisbursement => "status-warning",
+            LoanStatus.WrittenOff => "status-danger",
+            _ => "status-secondary"
+        };
+    }
+
+    string RepaymentStatusClass(RepaymentStatus status)
+    {
+        return status switch
+        {
+            RepaymentStatus.Confirmed => "status-success",
+            RepaymentStatus.Pending => "status-warning",
+            RepaymentStatus.Failed => "status-danger",
+            RepaymentStatus.Reversed => "status-secondary",
+            _ => "status-secondary"
+        };
+    }
+
+    int GetApplicationProgress(LoanApplicationStatus status, int savedProgress)
+    {
+        if (savedProgress > 0)
+            return Math.Min(100, Math.Max(0, savedProgress));
+
+        return status switch
+        {
+            LoanApplicationStatus.Submitted => 20,
+            LoanApplicationStatus.UnderReview => 50,
+            LoanApplicationStatus.DocumentsRequired => 40,
+            LoanApplicationStatus.Recommended => 75,
+            LoanApplicationStatus.Approved => 100,
+            LoanApplicationStatus.Rejected => 100,
+            LoanApplicationStatus.Cancelled => 100,
+            _ => 0
+        };
+    }
+
+    string GetApplicationMessage(
+        LoanApplicationStatus status,
+        string savedMessage)
+    {
+        if (!string.IsNullOrWhiteSpace(savedMessage))
+            return savedMessage;
+
+        return status switch
+        {
+            LoanApplicationStatus.Submitted => "Application submitted successfully.",
+            LoanApplicationStatus.UnderReview => "Your application is being reviewed.",
+            LoanApplicationStatus.DocumentsRequired => "Additional documents are required.",
+            LoanApplicationStatus.Recommended => "Your application has been recommended.",
+            LoanApplicationStatus.Approved => "Your application has been approved.",
+            LoanApplicationStatus.Rejected => "Your application was not approved.",
+            LoanApplicationStatus.Cancelled => "This application has been cancelled.",
+            _ => "Application progress will appear here."
+        };
+    }
+}
+
+<style>
+    :root {
+        --kv-primary: #172554;
+        --kv-primary-light: #263b78;
+        --kv-accent: #16a085;
+        --kv-background: #f5f7fb;
+        --kv-text: #1e293b;
+        --kv-muted: #64748b;
+        --kv-border: #e8edf4;
+    }
+
+    body {
+        background: var(--kv-background);
+    }
+
+    .dashboard-wrapper {
+        padding: 30px 0 50px;
+        color: var(--kv-text);
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 25px;
+    }
+
+    .welcome-label {
+        color: var(--kv-accent);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .dashboard-title {
+        font-size: 27px;
+        font-weight: 750;
+        letter-spacing: -.7px;
+        margin: 5px 0;
+    }
+
+    .dashboard-subtitle {
+        color: var(--kv-muted);
+        margin: 0;
+        font-size: 14px;
+    }
+
+    .borrower-number {
+        background: #eaf0ff;
+        color: var(--kv-primary);
+        border-radius: 30px;
+        padding: 10px 15px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .summary-card,
+    .dashboard-panel {
+        background: #fff;
+        border: 1px solid var(--kv-border);
+        border-radius: 15px;
+        padding: 21px;
+        height: 100%;
+    }
+
+    .summary-card {
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+        .summary-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, .06);
+        }
+
+    .summary-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .summary-icon {
+        width: 43px;
+        height: 43px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+    }
+
+    .icon-blue {
+        background: #eaf0ff;
+        color: #3155a6;
+    }
+
+    .icon-green {
+        background: #e4f7f1;
+        color: #12856d;
+    }
+
+    .icon-orange {
+        background: #fff3e5;
+        color: #d97706;
+    }
+
+    .icon-purple {
+        background: #f1eaff;
+        color: #7952b3;
+    }
+
+    .summary-label {
+        color: var(--kv-muted);
+        font-size: 13px;
+        margin-bottom: 7px;
+    }
+
+    .summary-value {
+        font-size: 24px;
+        font-weight: 750;
+        letter-spacing: -.5px;
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .summary-note {
+        color: var(--kv-muted);
+        font-size: 11px;
+        margin-top: 7px;
+    }
+
+    .panel-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .panel-title {
+        font-size: 16px;
+        font-weight: 750;
+        margin: 0;
+    }
+
+    .panel-subtitle {
+        color: var(--kv-muted);
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 30px;
+        padding: 6px 11px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .status-success {
+        background: #e5f7ef;
+        color: #13835e;
+    }
+
+    .status-danger {
+        background: #feecec;
+        color: #c24141;
+    }
+
+    .status-warning {
+        background: #fff4df;
+        color: #a16207;
+    }
+
+    .status-info {
+        background: #e8f3ff;
+        color: #2563a6;
+    }
+
+    .status-primary {
+        background: #eeeaff;
+        color: #6846b5;
+    }
+
+    .status-secondary {
+        background: #eef1f5;
+        color: #64748b;
+    }
+
+    .kyc-banner {
+        background: linear-gradient(115deg, #172554, #294b87);
+        color: white;
+        border-radius: 16px;
+        padding: 23px 25px;
+        margin-bottom: 25px;
+    }
+
+        .kyc-banner p {
+            color: #dbe5f8;
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+
+        .kyc-banner .btn {
+            background: white;
+            color: var(--kv-primary);
+            border: 0;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 10px 16px;
+        }
+
+    .application-card {
+        border: 1px solid var(--kv-border);
+        border-radius: 13px;
+        padding: 17px;
+        margin-bottom: 13px;
+    }
+
+        .application-card:last-child {
+            margin-bottom: 0;
+        }
+
+    .application-number {
+        font-size: 13px;
+        font-weight: 750;
+    }
+
+    .application-meta {
+        color: var(--kv-muted);
+        font-size: 11px;
+        margin-top: 5px;
+    }
+
+    .application-message {
+        color: var(--kv-muted);
+        font-size: 12px;
+        margin: 12px 0 8px;
+    }
+
+    .progress {
+        height: 8px;
+        border-radius: 20px;
+        background: #edf1f6;
+    }
+
+    .progress-bar {
+        border-radius: 20px;
+        background: var(--kv-accent);
+    }
+
+    .loan-card {
+        border: 1px solid var(--kv-border);
+        border-radius: 13px;
+        padding: 19px;
+        margin-bottom: 15px;
+    }
+
+        .loan-card:last-child {
+            margin-bottom: 0;
+        }
+
+    .loan-number {
+        font-weight: 750;
+        font-size: 14px;
+    }
+
+    .loan-product {
+        color: var(--kv-muted);
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .loan-amount {
+        font-size: 22px;
+        font-weight: 750;
+        margin-top: 18px;
+    }
+
+    .loan-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--kv-muted);
+        font-size: 12px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+
+    .product-card {
+        border: 1px solid var(--kv-border);
+        border-radius: 14px;
+        overflow: hidden;
+        height: 100%;
+        background: white;
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, .07);
+        }
+
+    .product-image {
+        height: 145px;
+        width: 100%;
+        object-fit: cover;
+        background: #eaf0ff;
+    }
+
+    .product-image-placeholder {
+        height: 145px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eaf0ff;
+        color: var(--kv-primary);
+        font-size: 38px;
+    }
+
+    .product-content {
+        padding: 17px;
+    }
+
+    .product-category {
+        color: var(--kv-accent);
+        font-size: 10px;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: .7px;
+    }
+
+    .product-title {
+        font-size: 15px;
+        font-weight: 750;
+        margin: 7px 0;
+    }
+
+    .product-description {
+        color: var(--kv-muted);
+        font-size: 12px;
+        line-height: 1.6;
+        min-height: 58px;
+    }
+
+    .dashboard-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .dashboard-table th {
+            color: var(--kv-muted);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--kv-border);
+            white-space: nowrap;
+        }
+
+        .dashboard-table td {
+            padding: 15px 10px;
+            border-bottom: 1px solid var(--kv-border);
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        .dashboard-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 35px 15px;
+        color: var(--kv-muted);
+    }
+
+        .empty-state i {
+            display: block;
+            font-size: 32px;
+            margin-bottom: 12px;
+            color: #94a3b8;
+        }
+
+        .empty-state h6 {
+            color: var(--kv-text);
+            font-weight: 700;
+        }
+
+    .profile-prompt {
+        background: white;
+        border: 1px solid var(--kv-border);
+        border-radius: 16px;
+        padding: 45px 25px;
+        text-align: center;
+        max-width: 650px;
+        margin: 50px auto;
+    }
+
+    .profile-prompt-icon {
+        width: 65px;
+        height: 65px;
+        background: #eaf0ff;
+        color: var(--kv-primary);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 27px;
+    }
+
+    .profile-prompt h3 {
+        font-weight: 750;
+        margin-bottom: 10px;
+    }
+
+    .profile-prompt p {
+        color: var(--kv-muted);
+        font-size: 14px;
+        line-height: 1.7;
+    }
+
+    .view-all-link {
+        color: var(--kv-primary);
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+        .view-all-link:hover {
+            color: var(--kv-accent);
+        }
+
+    @@media (max-width: 767px) {
+        .dashboard-wrapper {
+            padding-top: 20px;
+        }
+
+        .dashboard-title {
+            font-size: 23px;
+        }
+
+        .summary-value {
+            font-size: 21px;
+        }
+
+        .dashboard-panel {
+            padding: 17px;
+        }
+
+        .dashboard-table {
+            min-width: 600px;
+        }
+    }
+</style>
+
+<div class="container dashboard-wrapper">
+
+    @if (TempData["Success"] is string successMessage)
+    {
+        <div class="alert alert-success" role="alert">
+            @successMessage
+        </div>
+    }
+
+    <!-- Dashboard header -->
+    <div class="dashboard-header">
+        <div>
+            <div class="welcome-label">Kredvanta Borrower Portal</div>
+            <h1 class="dashboard-title">
+                Welcome back, @Model.BorrowerName
+            </h1>
+            <p class="dashboard-subtitle">
+                Here's an overview of your account and loan activity.
+            </p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.BorrowerNumber))
+        {
+            <div class="borrower-number">
+                <i class="bi bi-person-badge me-1"></i>
+                @Model.BorrowerNumber
+            </div>
+        }
+    </div>
+
+    @if (string.IsNullOrWhiteSpace(Model.BorrowerNumber))
+    {
+        <div class="profile-prompt">
+            <div class="profile-prompt-icon">
+                <i class="bi bi-person-lines-fill"></i>
+            </div>
+
+            <h3>Complete your borrower profile</h3>
+
+            <p>
+                Welcome to Kredvanta! Before you can access your full borrower
+                dashboard and apply for a loan, you need to complete your
+                personal and contact information.
+            </p>
+
+            <a asp-controller="Profile"
+               asp-action="Create"
+               class="btn btn-primary px-4 py-2">
+                Complete My Profile
+                <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+    }
+    else
+    {
+        <!-- KYC verification banner -->
+        @if (Model.KycStatus != KycStatus.Verified)
+        {
+            <div class="kyc-banner">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <div>
+                        <div class="fw-bold mb-2">
+                            <i class="bi bi-shield-check me-2"></i>
+                            Account verification
+                        </div>
+
+                        <p>
+                            @if (Model.KycStatus == KycStatus.NotStarted)
+                            {
+                                <span>
+                                    Your identity verification has not started.
+                                    Complete verification to help us process your loan applications.
+                                </span>
+                            }
+                            else if (Model.KycStatus == KycStatus.Pending)
+                            {
+                                <span>
+                                    Your verification documents are being reviewed.
+                                    We will update you when the review is complete.
+                                </span>
+                            }
+                            else
+                            {
+                                <span>
+                                    Your verification needs attention.
+                                    Please review your submitted documents.
+                                </span>
+                            }
+                        </p>
+                    </div>
+
+                    <a asp-controller="Verification"
+                       asp-action="Index"
+                       class="btn">
+                        View Verification
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-success border-0 rounded-3 mb-4">
+                <i class="bi bi-patch-check-fill me-2"></i>
+                Your borrower identity has been verified.
+            </div>
+        }
+
+        <!-- Financial and application summary cards -->
+        <div class="row g-3 mb-4">
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="summary-card">
+                    <div class="summary-top">
+                        <span class="summary-label">Loan Applications</span>
+                        <div class="summary-icon icon-blue">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                    </div>
+                    <h3 class="summary-value">@Model.TotalApplications</h3>
+                    <div class="summary-note">
+                        @Model.PendingApplications currently pending
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="summary-card">
+                    <div class="summary-top">
+                        <span class="summary-label">Active Loans</span>
+                        <div class="summary-icon icon-green">
+                            <i class="bi bi-wallet2"></i>
+                        </div>
+                    </div>
+                    <h3 class="summary-value">@Model.ActiveLoans</h3>
+                    <div class="summary-note">
+                        Your current loan accounts
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="summary-card">
+                    <div class="summary-top">
+                        <span class="summary-label">Total Borrowed</span>
+                        <div class="summary-icon icon-purple">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                    <h3 class="summary-value">
+                        KES @Model.TotalBorrowed.ToString("N2")
+                    </h3>
+                    <div class="summary-note">
+                        Principal on disbursed loans
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-xl-3">
+                <div class="summary-card">
+                    <div class="summary-top">
+                        <span class="summary-label">Outstanding Balance</span>
+                        <div class="summary-icon icon-orange">
+                            <i class="bi bi-hourglass-split"></i>
+                        </div>
+                    </div>
+                    <h3 class="summary-value">
+                        KES @Model.TotalOutstanding.ToString("N2")
+                    </h3>
+                    <div class="summary-note">
+                        Remaining loan balances
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Application statistics -->
+        <div class="dashboard-panel mb-4">
+            <div class="panel-heading">
+                <div>
+                    <h5 class="panel-title">Application overview</h5>
+                    <div class="panel-subtitle">
+                        A summary of your loan application activity
+                    </div>
+                </div>
+                <i class="bi bi-bar-chart-line text-primary fs-5"></i>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="summary-label">Pending review</div>
+                    <h3 class="summary-value">@Model.PendingApplications</h3>
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <div class="summary-label">Approved</div>
+                    <h3 class="summary-value text-success">
+                        @Model.ApprovedApplications
+                    </h3>
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <div class="summary-label">Rejected</div>
+                    <h3 class="summary-value text-danger">
+                        @Model.RejectedApplications
+                    </h3>
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <div class="summary-label">Action required</div>
+                    <h3 class="summary-value text-warning">
+                        @Model.ApplicationsRequiringAction
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available loan products -->
+        <div class="dashboard-panel mb-4">
+            <div class="panel-heading">
+                <div>
+                    <h5 class="panel-title">Explore loan products</h5>
+                    <div class="panel-subtitle">
+                        Explore financing options offered through Kredvanta
+                    </div>
+                </div>
+
+                <a asp-controller="BorrowerLoanProducts"
+                   asp-action="Index"
+                   class="view-all-link">
+                    View all products <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            @if (Model.AvailableProducts.Any())
+            {
+                <div class="row g-3">
+                    @foreach (var product in Model.AvailableProducts)
+                    {
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <div class="product-card">
+
+                                @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
+                                {
+                                    <img src="@product.ImageUrl"
+                                         alt="@product.ProductName"
+                                         class="product-image" />
+                                }
+                                else
+                                {
+                                    <div class="product-image-placeholder">
+                                        <i class="bi bi-cash-coin"></i>
+                                    </div>
+                                }
+
+                                <div class="product-content">
+                                    <div class="product-category">
+                                        @product.Category
+                                    </div>
+
+                                    <h6 class="product-title">
+                                        @product.ProductName
+                                    </h6>
+
+                                    <p class="product-description">
+                                        @product.Description
+                                    </p>
+
+                                    @if (product.IsAvailableForApplication)
+                                    {
+                                        <span class="status-badge status-success mb-3">
+                                            Applications open
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-secondary mb-3">
+                                            Applications currently closed
+                                        </span>
+                                    }
+
+                                    <div>
+                                        <a asp-controller="BorrowerLoanProducts"
+                                           asp-action="Details"
+                                           asp-route-id="@product.Id"
+                                           class="btn btn-outline-primary btn-sm w-100">
+                                            View product details
+                                            <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-grid"></i>
+                    <h6>No loan products available</h6>
+                    <p class="small mb-0">
+                        Loan products will appear here when they are published.
+                    </p>
+                </div>
+            }
+        </div>
+
+        <!-- Applications and loans -->
+        <div class="row g-4 mb-4">
+
+            <!-- Application tracking -->
+            <div class="col-12 col-lg-6">
+                <div class="dashboard-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h5 class="panel-title">Track my applications</h5>
+                            <div class="panel-subtitle">
+                                Follow the progress of your loan requests
+                            </div>
+                        </div>
+                        <i class="bi bi-clipboard-check text-primary fs-5"></i>
+                    </div>
+
+                    @if (Model.RecentApplications.Any())
+                    {
+                        @foreach (var application in Model.RecentApplications)
+                        {
+                            var progress = GetApplicationProgress(
+                                application.Status,
+                                application.ProgressPercentage);
+
+                            <div class="application-card">
+
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div>
+                                        <div class="application-number">
+                                            @application.ApplicationNumber
+                                        </div>
+
+                                        <div class="application-meta">
+                                            @application.LoanProductName
+                                        </div>
+
+                                        <div class="application-meta">
+                                            KES @application.RequestedAmount.ToString("N2")
+                                            · @application.RequestedTermPeriods periods
+                                        </div>
+                                    </div>
+
+                                    <span class="status-badge @ApplicationStatusClass(application.Status)">
+                                        @FormatStatus(application.Status.ToString())
+                                    </span>
+                                </div>
+
+                                <div class="application-message">
+                                    @GetApplicationMessage(
+                                        application.Status,
+                                        application.ProgressMessage)
+                                </div>
+
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="small text-muted">
+                                        Application progress
+                                    </span>
+                                    <span class="small fw-bold">
+                                        @progress%
+                                    </span>
+                                </div>
+
+                                <div class="progress mb-3">
+                                    <div class="progress-bar"
+                                         role="progressbar"
+                                         style="width: @(progress)%"
+                                         aria-valuenow="@progress"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <span class="application-meta">
+                                        Submitted:
+                                        @(application.SubmittedAt?.ToString("dd MMM yyyy") ?? "Not submitted")
+                                    </span>
+
+                                    <a asp-controller="LoanApplications"
+                                       asp-action="Details"
+                                       asp-route-id="@application.Id"
+                                       class="view-all-link">
+                                        View application
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-file-earmark-plus"></i>
+                            <h6>No applications yet</h6>
+                            <p class="small mb-0">
+                                Your loan applications will appear here after you apply.
+                            </p>
+
+                            <a asp-controller="BorrowerLoanProducts"
+                               asp-action="Index"
+                               class="btn btn-primary btn-sm mt-3">
+                                Explore loan products
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Loan portfolio -->
+            <div class="col-12 col-lg-6">
+                <div class="dashboard-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h5 class="panel-title">My loans</h5>
+                            <div class="panel-subtitle">
+                                Your loan accounts and repayment progress
+                            </div>
+                        </div>
+                        <i class="bi bi-wallet2 text-primary fs-5"></i>
+                    </div>
+
+                    @if (Model.Loans.Any())
+                    {
+                        @foreach (var loan in Model.Loans)
+                        {
+                            <div class="loan-card">
+
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div>
+                                        <div class="loan-number">
+                                            @loan.LoanNumber
+                                        </div>
+                                        <div class="loan-product">
+                                            @loan.ProductName
+                                        </div>
+                                    </div>
+
+                                    <span class="status-badge @LoanStatusClass(loan.Status)">
+                                        @FormatStatus(loan.Status.ToString())
+                                    </span>
+                                </div>
+
+                                <div class="loan-amount">
+                                    KES @loan.PrincipalAmount.ToString("N2")
+                                </div>
+
+                                <div class="small text-muted">
+                                    Original principal
+                                </div>
+
+                                @if (loan.Status != LoanStatus.PendingDisbursement)
+                                {
+                                    <div class="d-flex justify-content-between mt-4 mb-2">
+                                        <span class="small text-muted">
+                                            Repayment progress
+                                        </span>
+                                        <span class="small fw-bold">
+                                            @loan.RepaymentProgress.ToString("N1")%
+                                        </span>
+                                    </div>
+
+                                    <div class="progress">
+                                        <div class="progress-bar"
+                                             role="progressbar"
+                                             style="width: @(Math.Min(100, Math.Max(0, loan.RepaymentProgress)))%">
+                                        </div>
+                                    </div>
+
+                                    <div class="loan-meta">
+                                        <span>
+                                            Paid: KES @loan.ConfirmedRepayments.ToString("N2")
+                                        </span>
+                                        <span>
+                                            Balance: KES @loan.OutstandingBalance.ToString("N2")
+                                        </span>
+                                    </div>
+
+                                    @if (loan.NextInstallmentDate.HasValue)
+                                    {
+                                        <div class="mt-3 pt-3 border-top d-flex justify-content-between flex-wrap gap-2">
+                                            <span class="small text-muted">
+                                                Next unpaid installment
+                                            </span>
+
+                                            <span class="small fw-bold">
+                                                @loan.NextInstallmentDate.Value.ToString("dd MMM yyyy")
+                                                · KES @loan.NextInstallmentAmount.ToString("N2")
+                                            </span>
+                                        </div>
+                                    }
+
+                                    @if (loan.OverdueInstallments > 0)
+                                    {
+                                        <div class="mt-3">
+                                            <span class="status-badge status-danger">
+                                                @loan.OverdueInstallments overdue installment(s)
+                                            </span>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="mt-3 small text-muted">
+                                        Your loan is awaiting disbursement.
+                                        Repayment information will appear here once disbursement is completed.
+                                    </div>
+                                }
+
+                                <div class="loan-meta">
+                                    <span>
+                                        Disbursed:
+                                        @(loan.DisbursementDate?.ToString("dd MMM yyyy") ?? "Not yet disbursed")
+                                    </span>
+
+                                    <span>
+                                        Maturity:
+                                        @(loan.MaturityDate?.ToString("dd MMM yyyy") ?? "Not set")
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-wallet2"></i>
+                            <h6>No loan accounts yet</h6>
+                            <p class="small mb-0">
+                                When a loan is created for your approved application,
+                                it will appear here.
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Repayment summary and transactions -->
+        <div class="row g-4">
+
+            <div class="col-12 col-lg-4">
+                <div class="dashboard-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h5 class="panel-title">Repayment summary</h5>
+                            <div class="panel-subtitle">
+                                Confirmed repayments across your loans
+                            </div>
+                        </div>
+                        <i class="bi bi-graph-up-arrow text-success fs-5"></i>
+                    </div>
+
+                    <div class="summary-label">
+                        Total confirmed repayments
+                    </div>
+
+                    <div class="summary-value text-success mb-3">
+                        KES @Model.TotalConfirmedRepayments.ToString("N2")
+                    </div>
+
+                    <div class="small text-muted">
+                        Only confirmed transactions are included in this figure.
+                        Pending, failed and reversed transactions are excluded.
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-8">
+                <div class="dashboard-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h5 class="panel-title">Recent transactions</h5>
+                            <div class="panel-subtitle">
+                                Your latest repayment activity
+                            </div>
+                        </div>
+                        <i class="bi bi-receipt text-primary fs-5"></i>
+                    </div>
+
+                    @if (Model.RecentRepayments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="dashboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>Receipt</th>
+                                        <th>Method</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach (var repayment in Model.RecentRepayments)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">
+                                                @repayment.ReceiptNumber
+                                            </td>
+
+                                            <td>
+                                                @FormatStatus(repayment.Method.ToString())
+                                            </td>
+
+                                            <td>
+                                                @repayment.ReceivedAt.ToString("dd MMM yyyy")
+                                            </td>
+
+                                            <td class="fw-bold">
+                                                KES @repayment.Amount.ToString("N2")
+                                            </td>
+
+                                            <td>
+                                                <span class="status-badge @RepaymentStatusClass(repayment.Status)">
+                                                    @FormatStatus(repayment.Status.ToString())
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-receipt"></i>
+                            <h6>No repayment transactions</h6>
+                            <p class="small mb-0">
+                                Your repayment history will appear here.
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+        </div>
+    }
+
+    <div class="text-center text-muted small mt-4">
+        <i class="bi bi-shield-lock me-1"></i>
+        Your Kredvanta account information is private and secure.
+    </div>
+
+</div>

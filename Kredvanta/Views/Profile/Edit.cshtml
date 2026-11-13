@@ -1,0 +1,118 @@
+﻿@model Kredvanta.ViewModels.Profile.CreateProfileViewModel
+
+@{
+    ViewData["Title"] = "Edit My Profile";
+    ViewData["FormAction"] = "Edit";
+    ViewData["ButtonText"] = "Save Changes";
+    Layout = "_Layout";
+}
+
+<style>
+    .edit-profile-page {
+        background: #F1F5F9;
+        min-height: 100vh;
+        padding: 45px 0 70px;
+    }
+
+    .edit-profile-container {
+        max-width: 1050px;
+        margin: auto;
+    }
+
+    .edit-profile-heading {
+        margin-bottom: 25px;
+    }
+
+        .edit-profile-heading h2 {
+            color: #0F172A;
+            font-size: 28px;
+            font-weight: 800;
+            margin: 12px 0 7px;
+        }
+
+        .edit-profile-heading p {
+            color: #64748B;
+            font-size: 14px;
+        }
+
+    .edit-profile-tag {
+        display: inline-block;
+        background: #CCFBF1;
+        color: #0F766E;
+        padding: 7px 13px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .edit-profile-card {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 17px;
+        padding: 30px;
+        box-shadow: 0 8px 30px rgba(15,23,42,.05);
+    }
+
+        .edit-profile-card h5 {
+            color: #0F172A;
+            font-size: 17px;
+            font-weight: 750;
+        }
+
+        .edit-profile-card .intro {
+            color: #64748B;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+    @@media(max-width: 768px) {
+        .edit-profile-page {
+            padding: 25px 0 40px;
+        }
+
+        .edit-profile-card {
+            padding: 20px 17px;
+        }
+    }
+</style>
+
+<div class="edit-profile-page">
+    <div class="container edit-profile-container">
+
+        <div class="edit-profile-heading">
+
+            <span class="edit-profile-tag">
+                <i class="bi bi-pencil-square me-1"></i>
+                PROFILE MANAGEMENT
+            </span>
+
+            <h2>Update your profile</h2>
+
+            <p>
+                Keep your personal, employment and income information
+                accurate and up to date.
+            </p>
+
+        </div>
+
+        <div class="edit-profile-card">
+
+            <h5>
+                <i class="bi bi-person-gear me-2"
+                   style="color:#0F766E"></i>
+                Edit Borrower Information
+            </h5>
+
+            <p class="intro">
+                Update the relevant fields below and save your changes.
+            </p>
+
+            <partial name="_ProfileForm" model="Model" />
+
+        </div>
+
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

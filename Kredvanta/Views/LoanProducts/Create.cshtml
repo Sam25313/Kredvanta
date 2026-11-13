@@ -1,0 +1,340 @@
+﻿@model Kredvanta.ViewModels.LoanProducts.LoanProductFormViewModel
+
+@{
+    ViewData["Title"] = "Create Loan Product";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid py-4">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Create Loan Product</h2>
+            <p class="text-muted mb-0">
+                Configure a new lending product for Kredvanta borrowers.
+            </p>
+        </div>
+
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>
+            Back to Products
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post">
+
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly"
+             class="alert alert-danger"
+             role="alert"></div>
+
+        <div class="row g-4">
+
+            <!-- Basic Information -->
+            <div class="col-lg-8">
+
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-info-circle text-primary me-2"></i>
+                            Basic Product Information
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label asp-for="ProductCode" class="form-label fw-semibold"></label>
+                                <input asp-for="ProductCode"
+                                       class="form-control"
+                                       placeholder="e.g. PERSONAL-001" />
+                                <span asp-validation-for="ProductCode"
+                                      class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="ProductName" class="form-label fw-semibold"></label>
+                                <input asp-for="ProductName"
+                                       class="form-control"
+                                       placeholder="e.g. Personal Loan" />
+                                <span asp-validation-for="ProductName"
+                                      class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label fw-semibold"></label>
+                                <textarea asp-for="Description"
+                                          class="form-control"
+                                          rows="3"
+                                          placeholder="Describe the purpose and benefits of this loan product..."></textarea>
+                                <span asp-validation-for="Description"
+                                      class="text-danger small"></span>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Loan Amount -->
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-cash-stack text-success me-2"></i>
+                            Loan Amount Configuration
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label asp-for="MinimumAmount" class="form-label fw-semibold"></label>
+                                <input asp-for="MinimumAmount"
+                                       class="form-control"
+                                       type="number"
+                                       min="1"
+                                       step="0.01" />
+                                <span asp-validation-for="MinimumAmount"
+                                      class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="MaximumAmount" class="form-label fw-semibold"></label>
+                                <input asp-for="MaximumAmount"
+                                       class="form-control"
+                                       type="number"
+                                       min="1"
+                                       step="0.01" />
+                                <span asp-validation-for="MaximumAmount"
+                                      class="text-danger small"></span>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Interest Configuration -->
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-percent text-warning me-2"></i>
+                            Interest and Fees
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label asp-for="AnnualInterestRate" class="form-label fw-semibold"></label>
+                                <div class="input-group">
+                                    <input asp-for="AnnualInterestRate"
+                                           class="form-control"
+                                           type="number"
+                                           min="0"
+                                           max="100"
+                                           step="0.01" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <span asp-validation-for="AnnualInterestRate"
+                                      class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="InterestMethod" class="form-label fw-semibold"></label>
+                                <select asp-for="InterestMethod"
+                                        asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.LendingEnums.InterestMethod>()"
+                                        class="form-select">
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="ProcessingFeePercentage" class="form-label fw-semibold"></label>
+                                <div class="input-group">
+                                    <input asp-for="ProcessingFeePercentage"
+                                           class="form-control"
+                                           type="number"
+                                           min="0"
+                                           max="100"
+                                           step="0.01" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <span asp-validation-for="ProcessingFeePercentage"
+                                      class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="ProcessingFeeFixed" class="form-label fw-semibold"></label>
+                                <input asp-for="ProcessingFeeFixed"
+                                       class="form-control"
+                                       type="number"
+                                       min="0"
+                                       step="0.01" />
+                                <span asp-validation-for="ProcessingFeeFixed"
+                                      class="text-danger small"></span>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Repayment Configuration -->
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-calendar-check text-primary me-2"></i>
+                            Repayment Configuration
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label asp-for="RepaymentFrequency" class="form-label fw-semibold"></label>
+                                <select asp-for="RepaymentFrequency"
+                                        asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.LendingEnums.RepaymentFrequency>()"
+                                        class="form-select">
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="GracePeriodDays" class="form-label fw-semibold"></label>
+                                <input asp-for="GracePeriodDays"
+                                       class="form-control"
+                                       type="number"
+                                       min="0"
+                                       max="365" />
+                                <span asp-validation-for="GracePeriodDays"
+                                      class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="MinimumTermPeriods" class="form-label fw-semibold"></label>
+                                <input asp-for="MinimumTermPeriods"
+                                       class="form-control"
+                                       type="number"
+                                       min="1"
+                                       max="120" />
+                                <span asp-validation-for="MinimumTermPeriods"
+                                      class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="MaximumTermPeriods" class="form-label fw-semibold"></label>
+                                <input asp-for="MaximumTermPeriods"
+                                       class="form-control"
+                                       type="number"
+                                       min="1"
+                                       max="120" />
+                                <span asp-validation-for="MaximumTermPeriods"
+                                      class="text-danger small"></span>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Side Panel -->
+            <div class="col-lg-4">
+
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0">
+                            Product Availability
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive"
+                                   class="form-check-input"
+                                   role="switch" />
+
+                            <label asp-for="IsActive"
+                                   class="form-check-label fw-semibold">
+                            </label>
+                        </div>
+
+                        <p class="text-muted small mt-2">
+                            Active products are visible to eligible borrowers
+                            on the Available Loans page.
+                        </p>
+
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-body">
+
+                        <h6 class="fw-bold">
+                            <i class="bi bi-lightbulb text-warning me-2"></i>
+                            Configuration Tips
+                        </h6>
+
+                        <ul class="text-muted small ps-3 mb-0">
+                            <li class="mb-2">
+                                Choose a unique product code.
+                            </li>
+                            <li class="mb-2">
+                                Set realistic minimum and maximum loan amounts.
+                            </li>
+                            <li class="mb-2">
+                                Specify the interest calculation method.
+                            </li>
+                            <li class="mb-2">
+                                Define the repayment frequency and permitted terms.
+                            </li>
+                            <li>
+                                Configure processing fees carefully.
+                            </li>
+                        </ul>
+
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Save Loan Product
+                    </button>
+
+                    <a asp-action="Index"
+                       class="btn btn-light border">
+                        Cancel
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,343 @@
+﻿@using Kredvanta.Models.Products
+@model LoanProduct
+
+@{
+    ViewData["Title"] = Model.ProductName;
+    Layout = "_Layout";
+}
+
+<style>
+    :root {
+        --kred-navy: #101d36;
+        --kred-orange: #f58220;
+        --kred-light: #f5f7fb;
+    }
+
+    .details-page {
+        background: var(--kred-light);
+        min-height: 100vh;
+        padding: 35px 0 60px;
+    }
+
+    .details-hero {
+        background: linear-gradient(120deg, #101d36, #243c63);
+        color: white;
+        border-radius: 18px;
+        padding: 35px;
+        margin-bottom: 25px;
+    }
+
+    .details-card {
+        background: white;
+        border: 1px solid #e9edf3;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 22px;
+    }
+
+    .section-title {
+        color: var(--kred-navy);
+        font-weight: 750;
+        font-size: 19px;
+        margin-bottom: 20px;
+    }
+
+    .detail-label {
+        color: #8490a2;
+        font-size: 13px;
+        margin-bottom: 5px;
+    }
+
+    .detail-value {
+        color: var(--kred-navy);
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .detail-item {
+        padding: 15px 0;
+        border-bottom: 1px solid #edf0f5;
+    }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+    .document-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 0;
+        border-bottom: 1px solid #edf0f5;
+    }
+
+        .document-item:last-child {
+            border-bottom: none;
+        }
+
+    .document-icon {
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff1e5;
+        color: var(--kred-orange);
+        border-radius: 10px;
+        font-size: 19px;
+    }
+
+    .mandatory {
+        background: #fff0ed;
+        color: #bd4634;
+    }
+
+    .optional {
+        background: #e9f5ed;
+        color: #277345;
+    }
+
+    .btn-kred {
+        background: var(--kred-orange);
+        border: 1px solid var(--kred-orange);
+        color: white;
+        font-weight: 650;
+        border-radius: 9px;
+        padding: 12px 20px;
+    }
+
+        .btn-kred:hover {
+            background: #df6e12;
+            border-color: #df6e12;
+            color: white;
+        }
+</style>
+
+<div class="details-page">
+    <div class="container">
+
+        <a asp-action="Index"
+           class="text-decoration-none mb-4 d-inline-block"
+           style="color:#101d36;">
+            <i class="bi bi-arrow-left me-2"></i>
+            Back to available loans
+        </a>
+
+        <div class="details-hero">
+
+            <span class="badge bg-light text-dark mb-3">
+                @Model.ProductCode
+            </span>
+
+            <h1 class="fw-bold mb-3">
+                @Model.ProductName
+            </h1>
+
+            <p class="text-white-50 mb-0">
+                @(string.IsNullOrWhiteSpace(Model.Description)
+                    ? "Review the terms and requirements of this loan product."
+                    : Model.Description)
+            </p>
+
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-8">
+
+                <div class="details-card">
+
+                    <h4 class="section-title">
+                        <i class="bi bi-cash-stack me-2"
+                           style="color:#f58220;"></i>
+                        Loan Product Information
+                    </h4>
+
+                    <div class="row">
+
+                        <div class="col-md-6 detail-item">
+                            <div class="detail-label">Minimum Loan Amount</div>
+                            <div class="detail-value">
+                                KES @Model.MinimumAmount.ToString("N2")
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 detail-item">
+                            <div class="detail-label">Maximum Loan Amount</div>
+                            <div class="detail-value">
+                                KES @Model.MaximumAmount.ToString("N2")
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 detail-item">
+                            <div class="detail-label">Annual Interest Rate</div>
+                            <div class="detail-value">
+                                @Model.AnnualInterestRate%
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 detail-item">
+                            <div class="detail-label">Interest Calculation Method</div>
+                            <div class="detail-value">
+                                @Model.InterestMethod
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 detail-item">
+                            <div class="detail-label">Repayment Frequency</div>
+                            <div class="detail-value">
+                                @Model.RepaymentFrequency
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 detail-item">
+                            <div class="detail-label">Minimum Loan Term</div>
+                            <div class="detail-value">
+                                @Model.MinimumTermPeriods periods
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 detail-item">
+                            <div class="detail-label">Maximum Loan Term</div>
+                            <div class="detail-value">
+                                @Model.MaximumTermPeriods periods
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 detail-item">
+                            <div class="detail-label">Grace Period</div>
+                            <div class="detail-value">
+                                @Model.GracePeriodDays days
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 detail-item">
+                            <div class="detail-label">Processing Fee Percentage</div>
+                            <div class="detail-value">
+                                @Model.ProcessingFeePercentage%
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 detail-item">
+                            <div class="detail-label">Fixed Processing Fee</div>
+                            <div class="detail-value">
+                                KES @Model.ProcessingFeeFixed.ToString("N2")
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="details-card">
+
+                    <h4 class="section-title">
+                        <i class="bi bi-file-earmark-check me-2"
+                           style="color:#f58220;"></i>
+                        Required Documents
+                    </h4>
+
+                    @if (Model.RequiredDocuments == null ||
+                         !Model.RequiredDocuments.Any())
+                    {
+                        <div class="alert alert-info mb-0">
+                            No additional product-specific documents
+                            have been configured.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var document in Model.RequiredDocuments
+                            .OrderByDescending(d => d.IsMandatory)
+                            .ThenBy(d => d.DocumentName))
+                        {
+                            <div class="document-item">
+
+                                <div class="d-flex align-items-center gap-3">
+
+                                    <div class="document-icon">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </div>
+
+                                    <div>
+                                        <div class="fw-bold"
+                                             style="color:#101d36;">
+                                            @document.DocumentName
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(document.Description))
+                                        {
+                                            <small class="text-muted">
+                                                @document.Description
+                                            </small>
+                                        }
+                                    </div>
+
+                                </div>
+
+                                <span class="badge @(document.IsMandatory
+                                      ? "mandatory"
+                                      : "optional")">
+                                    @(document.IsMandatory
+                                        ? "Mandatory"
+                                        : "Optional")
+                                </span>
+
+                            </div>
+                        }
+                    }
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-4">
+
+                <div class="details-card">
+
+                    <h4 class="section-title">
+                        Before You Apply
+                    </h4>
+
+                    <p class="text-muted small">
+                        Please review the loan limits, interest method,
+                        repayment frequency and required documents
+                        before proceeding.
+                    </p>
+
+                    <ul class="text-muted small ps-3">
+                        <li class="mb-2">
+                            You must have a completed borrower profile.
+                        </li>
+                        <li class="mb-2">
+                            Your identity and verification documents
+                            must satisfy Kredvanta's verification requirements.
+                        </li>
+                        <li class="mb-2">
+                            Your requested amount must fall within
+                            the product's permitted limits.
+                        </li>
+                        <li>
+                            Your application will be subject to review
+                            and approval.
+                        </li>
+                    </ul>
+
+                    <hr />
+
+                    <a asp-controller="AvailableLoans"
+                       asp-action="Index"
+                       class="btn btn-outline-secondary w-100">
+                        Browse Other Products
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+

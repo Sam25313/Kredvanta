@@ -1,0 +1,550 @@
+﻿@model Kredvanta.ViewModels.Profile.CreateProfileViewModel
+
+@{
+    ViewData["Title"] = "Review & Submit Profile";
+    ViewData["CurrentStep"] = 4;
+    Layout = "_Layout";
+}
+
+<style>
+    .review-container {
+        max-width: 1050px;
+        margin: 35px auto;
+        padding: 0 15px;
+    }
+
+    .review-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, .05);
+    }
+
+    .review-header {
+        background: #10243a;
+        color: white;
+        padding: 28px 32px;
+    }
+
+        .review-header h2 {
+            font-size: 23px;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .review-header p {
+            color: #cbd5e1;
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+    .review-body {
+        padding: 30px 32px;
+    }
+
+    .review-section {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 22px;
+        overflow: hidden;
+    }
+
+    .review-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        background: #f8fafc;
+        padding: 15px 18px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+        .review-section-header h5 {
+            color: #0f766e;
+            font-size: 14px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .review-section-header a {
+            color: #0f766e;
+            font-size: 12px;
+            font-weight: 650;
+            text-decoration: none;
+        }
+
+            .review-section-header a:hover {
+                text-decoration: underline;
+            }
+
+    .review-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+        padding: 20px 18px;
+    }
+
+    .review-field {
+        min-width: 0;
+    }
+
+    .review-label {
+        display: block;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 650;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: .35px;
+    }
+
+    .review-value {
+        color: #1e293b;
+        font-size: 14px;
+        font-weight: 550;
+        overflow-wrap: anywhere;
+    }
+
+    .review-empty {
+        color: #94a3b8;
+        font-style: italic;
+        font-weight: 400;
+    }
+
+    .declaration-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 11px;
+        padding: 20px;
+        margin-top: 24px;
+    }
+
+        .declaration-box h5 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #10243a;
+            margin-bottom: 15px;
+        }
+
+    .declaration-item {
+        display: flex;
+        gap: 11px;
+        align-items: flex-start;
+        margin-bottom: 14px;
+        color: #334155;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+        .declaration-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .declaration-item input {
+            margin-top: 4px;
+            width: 17px;
+            height: 17px;
+            flex-shrink: 0;
+            accent-color: #0f766e;
+        }
+
+        .declaration-item label {
+            cursor: pointer;
+        }
+
+    .privacy-note {
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        border-radius: 9px;
+        padding: 14px 16px;
+        color: #115e59;
+        font-size: 12px;
+        line-height: 1.6;
+        margin-top: 18px;
+    }
+
+    .btn-primary-custom {
+        background: #0f766e;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 11px 24px;
+        font-size: 14px;
+        font-weight: 650;
+    }
+
+        .btn-primary-custom:hover {
+            background: #115e59;
+            color: white;
+        }
+
+    .btn-secondary-custom {
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 11px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .btn-secondary-custom:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+    @@media (max-width: 600px) {
+        .review-header, .review-body {
+            padding: 22px 18px;
+        }
+
+        .review-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+    }
+</style>
+
+@functions {
+    public string DisplayValue(object? value)
+    {
+        if (value == null)
+            return "Not provided";
+
+        var text = value.ToString();
+
+        return string.IsNullOrWhiteSpace(text)
+            ? "Not provided"
+            : text;
+    }
+}
+
+<div class="review-container">
+
+    <partial name="_ProfileProgress" />
+
+    <div class="review-card">
+
+        <div class="review-header">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-clipboard-check fs-4"></i>
+                <span class="small text-uppercase fw-semibold">
+                    Borrower Profile Registration
+                </span>
+            </div>
+
+            <h2>Review Your Profile</h2>
+
+            <p>
+                Please carefully review the information below before submitting
+                your borrower profile. You can return to any section to make
+                corrections.
+            </p>
+        </div>
+
+        <div class="review-body">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="alert alert-danger"
+                 role="alert"></div>
+
+            <!-- PERSONAL INFORMATION -->
+            <div class="review-section">
+
+                <div class="review-section-header">
+                    <h5>
+                        <i class="bi bi-person-vcard me-2"></i>
+                        Personal Identification
+                    </h5>
+
+                    <a asp-action="Step1">
+                        <i class="bi bi-pencil-square me-1"></i>Edit
+                    </a>
+                </div>
+
+                <div class="review-grid">
+
+                    <div class="review-field">
+                        <span class="review-label">First Name</span>
+                        <div class="review-value">@DisplayValue(Model.FirstName)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Middle Name</span>
+                        <div class="review-value">@DisplayValue(Model.MiddleName)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Last Name</span>
+                        <div class="review-value">@DisplayValue(Model.LastName)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Date of Birth</span>
+                        <div class="review-value">
+                            @(Model.DateOfBirth?.ToString("dd MMMM yyyy") ?? "Not provided")
+                        </div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Gender</span>
+                        <div class="review-value">@DisplayValue(Model.Gender)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Identification Type</span>
+                        <div class="review-value">@DisplayValue(Model.IdentificationType)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Identification Number</span>
+                        <div class="review-value">@DisplayValue(Model.NationalIdNumber)</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CONTACT AND RESIDENCE -->
+            <div class="review-section">
+
+                <div class="review-section-header">
+                    <h5>
+                        <i class="bi bi-geo-alt me-2"></i>
+                        Contact & Residence
+                    </h5>
+
+                    <a asp-action="Step2">
+                        <i class="bi bi-pencil-square me-1"></i>Edit
+                    </a>
+                </div>
+
+                <div class="review-grid">
+
+                    <div class="review-field">
+                        <span class="review-label">Primary Phone</span>
+                        <div class="review-value">@DisplayValue(Model.PhoneNumber)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Alternative Phone</span>
+                        <div class="review-value">@DisplayValue(Model.AlternativePhoneNumber)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Email Address</span>
+                        <div class="review-value">@DisplayValue(Model.Email)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">County</span>
+                        <div class="review-value">@DisplayValue(Model.County)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Sub-County</span>
+                        <div class="review-value">@DisplayValue(Model.SubCounty)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Ward</span>
+                        <div class="review-value">@DisplayValue(Model.Ward)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Estate / Village</span>
+                        <div class="review-value">@DisplayValue(Model.EstateOrVillage)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Residence Type</span>
+                        <div class="review-value">@DisplayValue(Model.ResidenceType)</div>
+                    </div>
+
+                    <div class="review-field" style="grid-column: 1 / -1;">
+                        <span class="review-label">Physical Address</span>
+                        <div class="review-value">@DisplayValue(Model.PhysicalAddress)</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- EMPLOYMENT AND INCOME -->
+            <div class="review-section">
+
+                <div class="review-section-header">
+                    <h5>
+                        <i class="bi bi-briefcase me-2"></i>
+                        Employment & Income
+                    </h5>
+
+                    <a asp-action="Step3">
+                        <i class="bi bi-pencil-square me-1"></i>Edit
+                    </a>
+                </div>
+
+                <div class="review-grid">
+
+                    <div class="review-field">
+                        <span class="review-label">Employment Status</span>
+                        <div class="review-value">@DisplayValue(Model.EmploymentStatus)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Occupation</span>
+                        <div class="review-value">@DisplayValue(Model.Occupation)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Employer / Business</span>
+                        <div class="review-value">@DisplayValue(Model.EmployerOrBusinessName)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Industry</span>
+                        <div class="review-value">@DisplayValue(Model.Industry)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Contract Type</span>
+                        <div class="review-value">@DisplayValue(Model.EmploymentContractType)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Employment / Business Start Date</span>
+                        <div class="review-value">
+                            @(Model.EmploymentStartDate?.ToString("dd MMMM yyyy") ?? "Not provided")
+                        </div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Years in Business</span>
+                        <div class="review-value">@DisplayValue(Model.BusinessYearsInOperation)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Payroll Frequency</span>
+                        <div class="review-value">@DisplayValue(Model.PayrollFrequency)</div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Gross Monthly Income</span>
+                        <div class="review-value">
+                            @(Model.GrossMonthlySalary.HasValue
+                                ? $"KES {Model.GrossMonthlySalary.Value:N2}"
+                                : "Not provided")
+                        </div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Net Monthly Income</span>
+                        <div class="review-value">
+                            @(Model.NetMonthlySalary.HasValue
+                                ? $"KES {Model.NetMonthlySalary.Value:N2}"
+                                : "Not provided")
+                        </div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Other Monthly Income</span>
+                        <div class="review-value">
+                            @(Model.OtherMonthlyIncome.HasValue
+                                ? $"KES {Model.OtherMonthlyIncome.Value:N2}"
+                                : "Not provided")
+                        </div>
+                    </div>
+
+                    <div class="review-field">
+                        <span class="review-label">Other Income Source</span>
+                        <div class="review-value">@DisplayValue(Model.OtherIncomeSource)</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- DECLARATIONS -->
+            <form asp-controller="Profile"
+                  asp-action="Complete"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div class="declaration-box">
+
+                    <h5>
+                        <i class="bi bi-shield-check me-2"></i>
+                        Declarations & Consent
+                    </h5>
+
+                    <div class="declaration-item">
+                        <input asp-for="PrivacyNoticeAccepted"
+                               type="checkbox"
+                               id="PrivacyNoticeAccepted" />
+
+                        <label for="PrivacyNoticeAccepted">
+                            I acknowledge that I have read and understood
+                            Kredvanta's privacy notice and consent to the
+                            processing of my personal information for legitimate
+                            account administration, identity verification and
+                            lending assessment purposes.
+                        </label>
+                    </div>
+
+                    <span asp-validation-for="PrivacyNoticeAccepted"
+                          class="text-danger small d-block mb-3"></span>
+
+                    <div class="declaration-item">
+                        <input asp-for="InformationAccurate"
+                               type="checkbox"
+                               id="InformationAccurate" />
+
+                        <label for="InformationAccurate">
+                            I declare that the information I have provided is
+                            true, accurate and complete to the best of my
+                            knowledge. I understand that providing misleading
+                            information may affect my application.
+                        </label>
+                    </div>
+
+                    <span asp-validation-for="InformationAccurate"
+                          class="text-danger small d-block"></span>
+
+                </div>
+
+                <div class="privacy-note">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Submitting this profile completes your initial borrower
+                    registration. It does not mean that your identity has been
+                    verified or that a loan has been approved. You may be
+                    required to upload supporting documents for verification.
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center
+                    flex-wrap gap-3 mt-4 pt-3 border-top">
+
+                    <a asp-controller="Profile"
+                       asp-action="Step3"
+                       class="btn-secondary-custom">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Back
+                    </a>
+
+                    <button type="submit" class="btn-primary-custom">
+                        Submit Profile
+                        <i class="bi bi-check-circle ms-1"></i>
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

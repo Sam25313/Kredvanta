@@ -1,0 +1,414 @@
+﻿@model Kredvanta.ViewModels.Profile.CreateProfileViewModel
+
+@{
+    ViewData["Title"] = "Personal Identification";
+    ViewData["CurrentStep"] = 1;
+    Layout = "_Layout";
+}
+
+<style>
+    .onboarding-page {
+        background: #F1F5F9;
+        min-height: 100vh;
+        padding: 40px 0 65px;
+    }
+
+    .onboarding-container {
+        max-width: 1050px;
+        margin: auto;
+    }
+
+    .onboarding-heading {
+        margin-bottom: 24px;
+    }
+
+    .onboarding-tag {
+        display: inline-block;
+        background: #CCFBF1;
+        color: #0F766E;
+        padding: 7px 13px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .5px;
+    }
+
+    .onboarding-heading h2 {
+        color: #0F172A;
+        font-size: 28px;
+        font-weight: 800;
+        margin: 13px 0 7px;
+    }
+
+    .onboarding-heading p {
+        color: #64748B;
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .onboarding-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(15,23,42,.05);
+    }
+
+    .onboarding-card-header {
+        background: #0F172A;
+        color: #FFFFFF;
+        padding: 24px 30px;
+    }
+
+        .onboarding-card-header h5 {
+            font-size: 17px;
+            font-weight: 750;
+            margin: 0 0 5px;
+        }
+
+        .onboarding-card-header p {
+            color: #CBD5E1;
+            font-size: 12px;
+            margin: 0;
+        }
+
+    .onboarding-card-body {
+        padding: 30px;
+    }
+
+    .section-icon {
+        width: 43px;
+        height: 43px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #CCFBF1;
+        color: #0F766E;
+        font-size: 19px;
+    }
+
+    .section-heading h6 {
+        color: #0F172A;
+        font-size: 15px;
+        font-weight: 750;
+        margin: 0 0 4px;
+    }
+
+    .section-heading p {
+        color: #64748B;
+        font-size: 12px;
+        margin: 0;
+    }
+
+    .form-label {
+        color: #334155;
+        font-size: 13px;
+        font-weight: 650;
+        margin-bottom: 7px;
+    }
+
+    .form-control,
+    .form-select {
+        min-height: 46px;
+        border: 1px solid #CBD5E1;
+        border-radius: 9px;
+        font-size: 13px;
+        padding: 10px 13px;
+        color: #0F172A;
+    }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #0D9488;
+            box-shadow: 0 0 0 3px rgba(13,148,136,.12);
+        }
+
+    .field-validation-error {
+        display: block;
+        color: #DC2626;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .validation-summary-errors {
+        background: #FEF2F2;
+        border: 1px solid #FECACA;
+        border-radius: 9px;
+        color: #B91C1C;
+        padding: 14px 18px;
+        font-size: 13px;
+        margin-bottom: 22px;
+    }
+
+    .validation-summary-valid {
+        display: none;
+    }
+
+    .field-hint {
+        color: #64748B;
+        font-size: 11px;
+        margin-top: 6px;
+    }
+
+    .information-notice {
+        display: flex;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 10px;
+        background: #F0FDFA;
+        border: 1px solid #99F6E4;
+        margin-top: 25px;
+    }
+
+        .information-notice i {
+            color: #0F766E;
+            font-size: 19px;
+        }
+
+        .information-notice strong {
+            color: #134E4A;
+            font-size: 13px;
+        }
+
+        .information-notice p {
+            color: #475569;
+            font-size: 12px;
+            margin: 4px 0 0;
+            line-height: 1.6;
+        }
+
+    .btn-continue {
+        background: #0F766E;
+        border: 1px solid #0F766E;
+        color: #FFFFFF;
+        border-radius: 9px;
+        padding: 12px 23px;
+        font-size: 13px;
+        font-weight: 750;
+    }
+
+        .btn-continue:hover {
+            background: #115E59;
+            border-color: #115E59;
+            color: #FFFFFF;
+        }
+
+    .btn-cancel {
+        color: #475569;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 650;
+    }
+
+        .btn-cancel:hover {
+            color: #0F766E;
+        }
+
+    @@media (max-width: 768px) {
+        .onboarding-page {
+            padding: 25px 0 40px;
+        }
+
+        .onboarding-card-body {
+            padding: 21px 17px;
+        }
+
+        .onboarding-card-header {
+            padding: 20px;
+        }
+
+        .onboarding-heading h2 {
+            font-size: 23px;
+        }
+    }
+</style>
+
+<div class="onboarding-page">
+    <div class="container onboarding-container">
+
+        <div class="onboarding-heading">
+            <span class="onboarding-tag">
+                <i class="bi bi-person-check me-1"></i>
+                BORROWER ONBOARDING
+            </span>
+
+            <h2>Let's get to know you</h2>
+
+            <p>
+                Start by providing your personal identification details.
+                Ensure that the information matches your official documents.
+            </p>
+        </div>
+
+        <partial name="_ProfileProgress" />
+
+        <div class="onboarding-card">
+
+            <div class="onboarding-card-header">
+                <h5>
+                    <i class="bi bi-person-vcard me-2"></i>
+                    Step 1: Personal Identification
+                </h5>
+
+                <p>
+                    Provide your legal names, date of birth and identification details.
+                </p>
+            </div>
+
+            <div class="onboarding-card-body">
+
+                <form asp-controller="Profile"
+                      asp-action="Step1"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly"></div>
+
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="section-icon">
+                            <i class="bi bi-person-lines-fill"></i>
+                        </div>
+
+                        <div class="section-heading">
+                            <h6>Personal Information</h6>
+                            <p>Enter your names as they appear on your identification document.</p>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+
+                        <div class="col-md-4">
+                            <label asp-for="FirstName" class="form-label"></label>
+                            <input asp-for="FirstName"
+                                   class="form-control"
+                                   autocomplete="given-name"
+                                   placeholder="Enter first name" />
+                            <span asp-validation-for="FirstName"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="MiddleName" class="form-label"></label>
+                            <input asp-for="MiddleName"
+                                   class="form-control"
+                                   autocomplete="additional-name"
+                                   placeholder="Enter middle name (if any)" />
+                            <span asp-validation-for="MiddleName"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="LastName" class="form-label"></label>
+                            <input asp-for="LastName"
+                                   class="form-control"
+                                   autocomplete="family-name"
+                                   placeholder="Enter last name" />
+                            <span asp-validation-for="LastName"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="DateOfBirth" class="form-label"></label>
+                            <input asp-for="DateOfBirth"
+                                   type="date"
+                                   class="form-control"
+                                   autocomplete="bday" />
+                            <span asp-validation-for="DateOfBirth"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Gender" class="form-label"></label>
+                            <select asp-for="Gender"
+                                    asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.LendingEnums.Gender>()"
+                                    class="form-select">
+                                <option value="">Prefer not to say</option>
+                            </select>
+                            <span asp-validation-for="Gender"></span>
+                        </div>
+
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="section-icon">
+                            <i class="bi bi-card-heading"></i>
+                        </div>
+
+                        <div class="section-heading">
+                            <h6>Identification Document</h6>
+                            <p>Select the document you will use for identity verification.</p>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label asp-for="IdentificationType" class="form-label"></label>
+
+                            <select asp-for="IdentificationType"
+                                    asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.IdentificationType>()"
+                                    class="form-select">
+                                <option value="">Select identification type</option>
+                            </select>
+
+                            <span asp-validation-for="IdentificationType"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="NationalIdNumber" class="form-label"></label>
+
+                            <input asp-for="NationalIdNumber"
+                                   class="form-control"
+                                   autocomplete="off"
+                                   placeholder="Enter ID or passport number" />
+
+                            <span asp-validation-for="NationalIdNumber"></span>
+
+                            <div class="field-hint">
+                                Enter the number exactly as it appears on your document.
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="information-notice">
+                        <i class="bi bi-shield-lock"></i>
+
+                        <div>
+                            <strong>Your information is protected</strong>
+                            <p>
+                                Your identification details will be used for borrower
+                                registration and identity verification. Completing this
+                                step does not mean your identity has already been verified.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-md-row
+                        justify-content-between align-items-md-center
+                        gap-3 mt-4 pt-3">
+
+                        <a asp-controller="Home"
+                           asp-action="Index"
+                           class="btn-cancel">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Exit onboarding
+                        </a>
+
+                        <button type="submit" class="btn-continue">
+                            Save & Continue
+                            <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,951 @@
+﻿@model Kredvanta.ViewModels.Verification.VerificationCentreViewModel
+@using Kredvanta.Models.Borrowers
+@using static Kredvanta.Models.Enums.LendingEnums
+
+@{
+    ViewData["Title"] = "Verification Centre";
+    Layout = "_Layout";
+
+    // Only display documents relevant to borrower-level KYC.
+    var allowedDocumentTypes = new[]
+    {
+        "National ID - Front",
+        "National ID - Back",
+        "Passport",
+        "Passport Photograph",
+        "Proof of Residence",
+        "Utility Bill",
+        "Tenancy Agreement"
+    };
+
+    // Select the latest submission for each document type.
+    var latestDocuments = Model.Documents
+        .Where(d => allowedDocumentTypes.Contains(d.DocumentType))
+        .GroupBy(d => d.DocumentType)
+        .Select(g => g.OrderByDescending(d => d.CreatedAt).First())
+        .ToList();
+
+    var idFront = latestDocuments
+        .FirstOrDefault(d => d.DocumentType == "National ID - Front");
+
+    var idBack = latestDocuments
+        .FirstOrDefault(d => d.DocumentType == "National ID - Back");
+
+    var additionalDocuments = latestDocuments
+        .Where(d => d.DocumentType != "National ID - Front"
+                 && d.DocumentType != "National ID - Back")
+        .OrderBy(d => d.DocumentType)
+        .ToList();
+
+    var totalDocuments = latestDocuments.Count;
+    var pendingDocuments = latestDocuments.Count(d =>
+        d.ReviewStatus == DocumentReviewStatus.Pending);
+
+    var verifiedDocuments = latestDocuments.Count(d =>
+        d.ReviewStatus == DocumentReviewStatus.Verified);
+
+    var rejectedDocuments = latestDocuments.Count(d =>
+        d.ReviewStatus == DocumentReviewStatus.Rejected);
+
+    var clarificationDocuments = latestDocuments.Count(d =>
+        d.ReviewStatus == DocumentReviewStatus.ClarificationRequired);
+
+    var verifiedIdSides = new[]
+    {
+        idFront,
+        idBack
+    }.Count(d => d != null &&
+        d.ReviewStatus == DocumentReviewStatus.Verified);
+
+    var identityProgress = (int)(verifiedIdSides / 2.0 * 100);
+
+    var kycTitle = Model.KycStatus switch
+    {
+        KycStatus.Verified => "Identity Verified",
+        KycStatus.Pending => "Verification In Progress",
+        KycStatus.Rejected => "Verification Requires Attention",
+        _ => "Verification Not Completed"
+    };
+
+    var kycDescription = Model.KycStatus switch
+    {
+        KycStatus.Verified =>
+            "Your borrower identity verification has been completed.",
+
+        KycStatus.Pending =>
+            "Your submitted documents are awaiting review by our verification team.",
+
+        KycStatus.Rejected =>
+            "Your identity verification was not approved. Please review the feedback on your documents.",
+
+        _ =>
+            "Submit your identity documents to begin the borrower verification process."
+    };
+
+    var kycIcon = Model.KycStatus switch
+    {
+        KycStatus.Verified => "bi-shield-check",
+        KycStatus.Pending => "bi-clock-history",
+        KycStatus.Rejected => "bi-exclamation-triangle",
+        _ => "bi-shield-lock"
+    };
+
+    var kycColor = Model.KycStatus switch
+    {
+        KycStatus.Verified => "success",
+        KycStatus.Pending => "warning",
+        KycStatus.Rejected => "danger",
+        _ => "secondary"
+    };
+}
+
+<style>
+    .verification-page {
+        background: #f5f7fb;
+        min-height: 100vh;
+        padding: 32px 0 60px;
+    }
+
+        .verification-page .container {
+            max-width: 1200px;
+        }
+
+    .page-heading {
+        color: #101d36;
+        font-weight: 800;
+        letter-spacing: -.6px;
+    }
+
+    .muted-text {
+        color: #718096;
+    }
+
+    .verification-hero {
+        background: linear-gradient(120deg, #101d36, #1c355d);
+        color: white;
+        border-radius: 18px;
+        padding: 30px;
+        margin: 25px 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .verification-hero::after {
+            content: "";
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            border: 35px solid rgba(255,255,255,.06);
+            border-radius: 50%;
+            right: -70px;
+            top: -100px;
+            pointer-events: none;
+        }
+
+    .hero-status-icon {
+        width: 62px;
+        height: 62px;
+        border-radius: 16px;
+        background: rgba(255,255,255,.12);
+        color: #f58220;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 29px;
+        margin-bottom: 17px;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 30px;
+        padding: 8px 13px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .status-pending {
+        background: #fff4d6;
+        color: #946200;
+    }
+
+    .status-verified {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-clarification {
+        background: #ffedd5;
+        color: #9a3412;
+    }
+
+    .status-not-uploaded {
+        background: #edf2fa;
+        color: #52627a;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #e9edf3;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(16,29,54,.025);
+        height: 100%;
+    }
+
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+    }
+
+    .document-card {
+        background: white;
+        border: 1px solid #e9edf3;
+        border-radius: 15px;
+        padding: 22px;
+        height: 100%;
+        box-shadow: 0 5px 20px rgba(16,29,54,.025);
+        transition: .2s ease;
+    }
+
+        .document-card:hover {
+            border-color: #d5deea;
+            transform: translateY(-2px);
+        }
+
+    .document-icon {
+        width: 49px;
+        height: 49px;
+        min-width: 49px;
+        border-radius: 13px;
+        background: #fff1e5;
+        color: #f58220;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 23px;
+    }
+
+    .document-placeholder {
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+        background: #fafbfd;
+        padding: 22px;
+        text-align: center;
+    }
+
+        .document-placeholder i {
+            font-size: 30px;
+            color: #94a3b8;
+        }
+
+    .document-feedback {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 10px;
+        padding: 13px;
+        color: #7c2d12;
+        font-size: 13px;
+    }
+
+        .document-feedback.rejected {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+
+    .btn-kredvanta {
+        background: #f58220;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+        .btn-kredvanta:hover {
+            background: #dc6d12;
+            color: white;
+        }
+
+    .btn-outline-custom {
+        border: 1px solid #dce3ed;
+        color: #40516b;
+        background: white;
+        border-radius: 8px;
+        padding: 9px 14px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+        .btn-outline-custom:hover {
+            background: #edf2fa;
+            color: #101d36;
+        }
+
+    .section-heading {
+        color: #101d36;
+        font-weight: 800;
+    }
+
+    .progress {
+        height: 9px;
+        border-radius: 20px;
+        background: rgba(255,255,255,.17);
+    }
+
+    .progress-bar {
+        background: #f58220;
+        border-radius: 20px;
+    }
+
+    .security-note {
+        background: #edf2fa;
+        border: 1px solid #e1e8f2;
+        border-radius: 13px;
+        padding: 18px;
+    }
+
+    .empty-documents {
+        background: white;
+        border: 1px dashed #cbd5e1;
+        border-radius: 14px;
+        padding: 30px;
+        text-align: center;
+    }
+
+    @@media(max-width: 576px) {
+        .verification-hero {
+            padding: 22px;
+        }
+
+        .document-card {
+            padding: 18px;
+        }
+    }
+</style>
+
+<div class="verification-page">
+    <div class="container">
+
+        @if (TempData["Warning"] is string warningMessage)
+        {
+            <div class="alert alert-warning" role="alert">
+                @warningMessage
+            </div>
+        }
+
+        <!-- PAGE HEADER -->
+        <div class="mb-3">
+            <div class="small fw-semibold text-uppercase mb-2"
+                 style="color:#f58220;letter-spacing:1.5px;">
+                BORROWER PORTAL
+            </div>
+
+            <h2 class="page-heading mb-2">
+                Verification Centre
+            </h2>
+
+            <p class="muted-text mb-0">
+                Manage your identity documents and track the progress
+                of your borrower verification.
+            </p>
+        </div>
+
+        <!-- OVERALL KYC STATUS -->
+        <div class="verification-hero">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+
+                    <div class="hero-status-icon">
+                        <i class="bi @kycIcon"></i>
+                    </div>
+
+                    <span class="badge bg-@kycColor mb-3">
+                        @kycTitle
+                    </span>
+
+                    <h3 class="fw-bold mb-2">
+                        Your identity verification
+                    </h3>
+
+                    <p class="text-white-50 mb-0">
+                        @kycDescription
+                    </p>
+
+                    @if (Model.KycStatus == KycStatus.Verified)
+                    {
+                        <div class="mt-3">
+                            <span class="small">
+                                <i class="bi bi-check-circle-fill me-1"></i>
+                                Your KYC verification has been completed.
+                            </span>
+                        </div>
+                    }
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="p-3 rounded-3"
+                         style="background:rgba(255,255,255,.08);">
+
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small text-white-50">
+                                National ID verification
+                            </span>
+
+                            <span class="fw-bold">
+                                @identityProgress%
+                            </span>
+                        </div>
+
+                        <div class="progress">
+                            <div class="progress-bar"
+                                 role="progressbar"
+                                 style="width:@identityProgress%;"
+                                 aria-valuenow="@identityProgress"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+
+                        <p class="small text-white-50 mt-3 mb-0">
+                            @verifiedIdSides of 2 National ID sides verified
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOCUMENT STATISTICS -->
+        <div class="row g-3 mb-4">
+
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small muted-text fw-semibold">
+                            Documents submitted
+                        </span>
+                        <div class="stat-icon"
+                             style="background:#edf2fa;color:#1c355d;">
+                            <i class="bi bi-folder2-open"></i>
+                        </div>
+                    </div>
+
+                    <h3 class="fw-bold mb-0" style="color:#101d36;">
+                        @totalDocuments
+                    </h3>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small muted-text fw-semibold">
+                            Pending review
+                        </span>
+                        <div class="stat-icon"
+                             style="background:#fff4d6;color:#946200;">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                    </div>
+
+                    <h3 class="fw-bold mb-0" style="color:#101d36;">
+                        @pendingDocuments
+                    </h3>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small muted-text fw-semibold">
+                            Verified
+                        </span>
+                        <div class="stat-icon"
+                             style="background:#dcfce7;color:#166534;">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                    </div>
+
+                    <h3 class="fw-bold mb-0" style="color:#101d36;">
+                        @verifiedDocuments
+                    </h3>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
+                <div class="stat-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small muted-text fw-semibold">
+                            Needs attention
+                        </span>
+                        <div class="stat-icon"
+                             style="background:#fee2e2;color:#991b1b;">
+                            <i class="bi bi-exclamation-circle"></i>
+                        </div>
+                    </div>
+
+                    <h3 class="fw-bold mb-0" style="color:#101d36;">
+                        @(rejectedDocuments + clarificationDocuments)
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- NATIONAL ID -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h4 class="section-heading mb-1">
+                    National Identity Card
+                </h4>
+
+                <p class="small muted-text mb-0">
+                    Both sides of your National ID are required for identity verification.
+                </p>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-5">
+
+            <!-- NATIONAL ID FRONT -->
+            <div class="col-md-6">
+                <div class="document-card">
+
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="document-icon">
+                            <i class="bi bi-person-vcard"></i>
+                        </div>
+
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color:#101d36;">
+                                National ID - Front
+                            </h6>
+
+                            <p class="small muted-text mb-0">
+                                Front side of your identity card
+                            </p>
+                        </div>
+                    </div>
+
+                    @if (idFront == null)
+                    {
+                        <div class="document-placeholder">
+                            <i class="bi bi-card-image"></i>
+
+                            <h6 class="fw-bold mt-2 mb-1">
+                                Front side not uploaded
+                            </h6>
+
+                            <p class="small muted-text mb-3">
+                                Upload a clear image of the front of your ID.
+                            </p>
+
+                            <a asp-controller="Verification"
+                               asp-action="Upload"
+                               asp-route-documentType="National ID - Front"
+                               class="btn btn-kredvanta">
+                                <i class="bi bi-cloud-arrow-up me-1"></i>
+                                Upload Front Side
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            @switch (idFront.ReviewStatus)
+                            {
+                                case DocumentReviewStatus.Pending:
+                                    <span class="status-pill status-pending">
+                                        <i class="bi bi-clock"></i>
+                                        Pending review
+                                    </span>
+                                    break;
+
+                                case DocumentReviewStatus.Verified:
+                                    <span class="status-pill status-verified">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        Verified
+                                    </span>
+                                    break;
+
+                                case DocumentReviewStatus.Rejected:
+                                    <span class="status-pill status-rejected">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                        Rejected
+                                    </span>
+                                    break;
+
+                                case DocumentReviewStatus.ClarificationRequired:
+                                    <span class="status-pill status-clarification">
+                                        <i class="bi bi-exclamation-circle"></i>
+                                        Clarification required
+                                    </span>
+                                    break;
+                            }
+                        </div>
+
+                        <p class="small muted-text mb-2">
+                            <i class="bi bi-file-image me-1"></i>
+                            @idFront.OriginalFileName
+                        </p>
+
+                        <p class="small muted-text mb-3">
+                            Submitted @idFront.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")
+                        </p>
+
+                        @if (idFront.ReviewStatus == DocumentReviewStatus.Rejected ||
+                             idFront.ReviewStatus == DocumentReviewStatus.ClarificationRequired)
+                        {
+                            <div class="document-feedback @(idFront.ReviewStatus == DocumentReviewStatus.Rejected ? "rejected" : "") mb-3">
+                                <strong>
+                                    <i class="bi bi-chat-left-text me-1"></i>
+                                    Review feedback
+                                </strong>
+
+                                <p class="mb-0 mt-1">
+                                    @(string.IsNullOrWhiteSpace(idFront.ReviewComments)
+                                        ? "Please upload a new, clear copy of this document."
+                                        : idFront.ReviewComments)
+                                </p>
+                            </div>
+                        }
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <a asp-controller="Verification"
+                               asp-action="Download"
+                               asp-route-id="@idFront.Id"
+                               class="btn btn-outline-custom">
+                                <i class="bi bi-download me-1"></i>
+                                Download
+                            </a>
+
+                            @if (idFront.ReviewStatus == DocumentReviewStatus.Rejected ||
+                                 idFront.ReviewStatus == DocumentReviewStatus.ClarificationRequired)
+                            {
+                                <a asp-controller="Verification"
+                                   asp-action="Upload"
+                                   asp-route-documentType="National ID - Front"
+                                   class="btn btn-kredvanta">
+                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                    Replace Document
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- NATIONAL ID BACK -->
+            <div class="col-md-6">
+                <div class="document-card">
+
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="document-icon">
+                            <i class="bi bi-person-vcard"></i>
+                        </div>
+
+                        <div>
+                            <h6 class="fw-bold mb-1" style="color:#101d36;">
+                                National ID - Back
+                            </h6>
+
+                            <p class="small muted-text mb-0">
+                                Back side of your identity card
+                            </p>
+                        </div>
+                    </div>
+
+                    @if (idBack == null)
+                    {
+                        <div class="document-placeholder">
+                            <i class="bi bi-card-image"></i>
+
+                            <h6 class="fw-bold mt-2 mb-1">
+                                Back side not uploaded
+                            </h6>
+
+                            <p class="small muted-text mb-3">
+                                Upload a clear image of the back of your ID.
+                            </p>
+
+                            <a asp-controller="Verification"
+                               asp-action="Upload"
+                               asp-route-documentType="National ID - Back"
+                               class="btn btn-kredvanta">
+                                <i class="bi bi-cloud-arrow-up me-1"></i>
+                                Upload Back Side
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            @switch (idBack.ReviewStatus)
+                            {
+                                case DocumentReviewStatus.Pending:
+                                    <span class="status-pill status-pending">
+                                        <i class="bi bi-clock"></i>
+                                        Pending review
+                                    </span>
+                                    break;
+
+                                case DocumentReviewStatus.Verified:
+                                    <span class="status-pill status-verified">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        Verified
+                                    </span>
+                                    break;
+
+                                case DocumentReviewStatus.Rejected:
+                                    <span class="status-pill status-rejected">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                        Rejected
+                                    </span>
+                                    break;
+
+                                case DocumentReviewStatus.ClarificationRequired:
+                                    <span class="status-pill status-clarification">
+                                        <i class="bi bi-exclamation-circle"></i>
+                                        Clarification required
+                                    </span>
+                                    break;
+                            }
+                        </div>
+
+                        <p class="small muted-text mb-2">
+                            <i class="bi bi-file-image me-1"></i>
+                            @idBack.OriginalFileName
+                        </p>
+
+                        <p class="small muted-text mb-3">
+                            Submitted @idBack.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")
+                        </p>
+
+                        @if (idBack.ReviewStatus == DocumentReviewStatus.Rejected ||
+                             idBack.ReviewStatus == DocumentReviewStatus.ClarificationRequired)
+                        {
+                            <div class="document-feedback @(idBack.ReviewStatus == DocumentReviewStatus.Rejected ? "rejected" : "") mb-3">
+                                <strong>
+                                    <i class="bi bi-chat-left-text me-1"></i>
+                                    Review feedback
+                                </strong>
+
+                                <p class="mb-0 mt-1">
+                                    @(string.IsNullOrWhiteSpace(idBack.ReviewComments)
+                                        ? "Please upload a new, clear copy of this document."
+                                        : idBack.ReviewComments)
+                                </p>
+                            </div>
+                        }
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <a asp-controller="Verification"
+                               asp-action="Download"
+                               asp-route-id="@idBack.Id"
+                               class="btn btn-outline-custom">
+                                <i class="bi bi-download me-1"></i>
+                                Download
+                            </a>
+
+                            @if (idBack.ReviewStatus == DocumentReviewStatus.Rejected ||
+                                 idBack.ReviewStatus == DocumentReviewStatus.ClarificationRequired)
+                            {
+                                <a asp-controller="Verification"
+                                   asp-action="Upload"
+                                   asp-route-documentType="National ID - Back"
+                                   class="btn btn-kredvanta">
+                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                    Replace Document
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ADDITIONAL IDENTITY DOCUMENTS -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+                <h4 class="section-heading mb-1">
+                    Additional Identity Documents
+                </h4>
+
+                <p class="small muted-text mb-0">
+                    Submit additional identity or residence documents where applicable.
+                </p>
+            </div>
+
+            <a asp-controller="Verification"
+               asp-action="Upload"
+               class="btn btn-kredvanta">
+                <i class="bi bi-plus-lg me-1"></i>
+                Add Document
+            </a>
+        </div>
+
+        @if (additionalDocuments.Any())
+        {
+            <div class="row g-3 mb-4">
+
+                @foreach (var document in additionalDocuments)
+                {
+                    var isRejected =
+                        document.ReviewStatus == DocumentReviewStatus.Rejected;
+
+                    var needsClarification =
+                        document.ReviewStatus == DocumentReviewStatus.ClarificationRequired;
+
+                    <div class="col-md-6 col-xl-4">
+                        <div class="document-card">
+
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="document-icon">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                </div>
+
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-1" style="color:#101d36;">
+                                        @document.DocumentType
+                                    </h6>
+
+                                    <p class="small muted-text mb-0">
+                                        @document.OriginalFileName
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                @switch (document.ReviewStatus)
+                                {
+                                    case DocumentReviewStatus.Pending:
+                                        <span class="status-pill status-pending">
+                                            <i class="bi bi-clock"></i>
+                                            Pending review
+                                        </span>
+                                        break;
+
+                                    case DocumentReviewStatus.Verified:
+                                        <span class="status-pill status-verified">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            Verified
+                                        </span>
+                                        break;
+
+                                    case DocumentReviewStatus.Rejected:
+                                        <span class="status-pill status-rejected">
+                                            <i class="bi bi-x-circle-fill"></i>
+                                            Rejected
+                                        </span>
+                                        break;
+
+                                    case DocumentReviewStatus.ClarificationRequired:
+                                        <span class="status-pill status-clarification">
+                                            <i class="bi bi-exclamation-circle"></i>
+                                            Clarification required
+                                        </span>
+                                        break;
+                                }
+                            </div>
+
+                            <p class="small muted-text mb-3">
+                                Submitted @document.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                            </p>
+
+                            @if (isRejected || needsClarification)
+                            {
+                                <div class="document-feedback @(isRejected ? "rejected" : "") mb-3">
+                                    <strong>Review feedback</strong>
+
+                                    <p class="mb-0 mt-1">
+                                        @(string.IsNullOrWhiteSpace(document.ReviewComments)
+                                            ? "Please submit an updated copy of this document."
+                                            : document.ReviewComments)
+                                    </p>
+                                </div>
+                            }
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <a asp-controller="Verification"
+                                   asp-action="Download"
+                                   asp-route-id="@document.Id"
+                                   class="btn btn-outline-custom">
+                                    <i class="bi bi-download me-1"></i>
+                                    Download
+                                </a>
+
+                                @if (isRejected || needsClarification)
+                                {
+                                    <a asp-controller="Verification"
+                                       asp-action="Upload"
+                                       asp-route-documentType="@document.DocumentType"
+                                       class="btn btn-kredvanta">
+                                        <i class="bi bi-arrow-repeat me-1"></i>
+                                        Replace
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-documents mb-4">
+                <i class="bi bi-folder2-open"
+                   style="font-size:38px;color:#94a3b8;"></i>
+
+                <h6 class="fw-bold mt-3" style="color:#101d36;">
+                    No additional identity documents
+                </h6>
+
+                <p class="small muted-text mb-3">
+                    You can submit additional identity or residence documents
+                    if they are applicable to your verification.
+                </p>
+
+                <a asp-controller="Verification"
+                   asp-action="Upload"
+                   class="btn btn-kredvanta">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Add Document
+                </a>
+            </div>
+        }
+
+        <!-- SECURITY NOTE -->
+        <div class="security-note mt-4">
+            <div class="d-flex gap-3">
+                <i class="bi bi-shield-lock-fill"
+                   style="font-size:25px;color:#1c355d;"></i>
+
+                <div>
+                    <h6 class="fw-bold mb-1" style="color:#101d36;">
+                        Your information is protected
+                    </h6>
+
+                    <p class="small muted-text mb-0">
+                        Your identity documents are stored privately and are
+                        intended for authorised verification purposes.
+                        Do not share your login credentials or verification
+                        documents with unauthorised persons.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

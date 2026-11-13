@@ -1,0 +1,363 @@
+﻿@model Kredvanta.ViewModels.Profile.CreateProfileViewModel
+
+@{
+    ViewData["Title"] = "Contact & Residence Details";
+    ViewData["CurrentStep"] = 2;
+    Layout = "_Layout";
+}
+
+<style>
+    .onboarding-container {
+        max-width: 1050px;
+        margin: 35px auto;
+        padding: 0 15px;
+    }
+
+    .onboarding-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, .05);
+    }
+
+    .onboarding-header {
+        background: #10243a;
+        color: #fff;
+        padding: 28px 32px;
+    }
+
+        .onboarding-header h2 {
+            font-size: 23px;
+            font-weight: 700;
+            margin-bottom: 7px;
+        }
+
+        .onboarding-header p {
+            color: #cbd5e1;
+            margin: 0;
+            font-size: 14px;
+        }
+
+    .onboarding-body {
+        padding: 30px 32px;
+    }
+
+    .section-heading {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f766e;
+        margin: 24px 0 17px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+        .section-heading:first-child {
+            margin-top: 0;
+        }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 650;
+        color: #334155;
+        margin-bottom: 7px;
+    }
+
+    .form-control, .form-select {
+        min-height: 45px;
+        border-radius: 8px;
+        border-color: #cbd5e1;
+        font-size: 14px;
+    }
+
+    textarea.form-control {
+        min-height: 95px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #0f766e;
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, .1);
+    }
+
+    .field-hint {
+        color: #64748b;
+        font-size: 11px;
+        margin-top: 5px;
+    }
+
+    .btn-primary-custom {
+        background: #0f766e;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 11px 24px;
+        font-size: 14px;
+        font-weight: 650;
+    }
+
+        .btn-primary-custom:hover {
+            background: #115e59;
+            color: #fff;
+        }
+
+    .btn-secondary-custom {
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 11px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+        .btn-secondary-custom:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+    .information-note {
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+        border-radius: 9px;
+        padding: 14px 16px;
+        color: #115e59;
+        font-size: 13px;
+        margin-top: 25px;
+    }
+
+    @@media (max-width: 600px) {
+        .onboarding-header, .onboarding-body {
+            padding: 22px 18px;
+        }
+    }
+</style>
+
+<div class="onboarding-container">
+
+    <partial name="_ProfileProgress" />
+
+    <div class="onboarding-card">
+
+        <div class="onboarding-header">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-geo-alt fs-4"></i>
+                <span class="small text-uppercase fw-semibold">
+                    Borrower Profile Registration
+                </span>
+            </div>
+
+            <h2>Contact & Residence Details</h2>
+
+            <p>
+                Provide your current contact information and residential address.
+                These details help us communicate with you and establish your place
+                of residence.
+            </p>
+        </div>
+
+        <div class="onboarding-body">
+
+            <form asp-controller="Profile"
+                  asp-action="Step2"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly"
+                     class="alert alert-danger"
+                     role="alert"></div>
+
+                <h5 class="section-heading">
+                    <i class="bi bi-telephone me-2"></i>
+                    Contact Information
+                </h5>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label asp-for="PhoneNumber" class="form-label">
+                            Primary Phone Number <span class="text-danger">*</span>
+                        </label>
+
+                        <input asp-for="PhoneNumber"
+                               class="form-control"
+                               type="tel"
+                               placeholder="e.g. 0712345678"
+                               autocomplete="tel" />
+
+                        <span asp-validation-for="PhoneNumber"
+                              class="text-danger small"></span>
+
+                        <div class="field-hint">
+                            Use a phone number that you can access regularly.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="AlternativePhoneNumber"
+                               class="form-label">
+                            Alternative Phone Number
+                        </label>
+
+                        <input asp-for="AlternativePhoneNumber"
+                               class="form-control"
+                               type="tel"
+                               placeholder="e.g. 0723456789" />
+
+                        <span asp-validation-for="AlternativePhoneNumber"
+                              class="text-danger small"></span>
+
+                        <div class="field-hint">
+                            Optional. Provide another reachable number.
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Email" class="form-label">
+                            Email Address <span class="text-danger">*</span>
+                        </label>
+
+                        <input asp-for="Email"
+                               class="form-control"
+                               type="email"
+                               placeholder="example@email.com"
+                               autocomplete="email" />
+
+                        <span asp-validation-for="Email"
+                              class="text-danger small"></span>
+
+                        <div class="field-hint">
+                            Provide an email address you regularly use.
+                        </div>
+                    </div>
+
+                </div>
+
+                <h5 class="section-heading">
+                    <i class="bi bi-house-door me-2"></i>
+                    Residential Information
+                </h5>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label asp-for="County" class="form-label">
+                            County <span class="text-danger">*</span>
+                        </label>
+
+                        <input asp-for="County"
+                               class="form-control"
+                               placeholder="e.g. Nairobi" />
+
+                        <span asp-validation-for="County"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="SubCounty" class="form-label">
+                            Sub-County <span class="text-danger">*</span>
+                        </label>
+
+                        <input asp-for="SubCounty"
+                               class="form-control"
+                               placeholder="Enter your sub-county" />
+
+                        <span asp-validation-for="SubCounty"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Ward" class="form-label">
+                            Ward <span class="text-danger">*</span>
+                        </label>
+
+                        <input asp-for="Ward"
+                               class="form-control"
+                               placeholder="Enter your ward" />
+
+                        <span asp-validation-for="Ward"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="EstateOrVillage" class="form-label">
+                            Estate / Village <span class="text-danger">*</span>
+                        </label>
+
+                        <input asp-for="EstateOrVillage"
+                               class="form-control"
+                               placeholder="Enter your estate or village" />
+
+                        <span asp-validation-for="EstateOrVillage"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="ResidenceType" class="form-label">
+                            Residence Type <span class="text-danger">*</span>
+                        </label>
+
+                        <select asp-for="ResidenceType"
+                                class="form-select"
+                                asp-items="Html.GetEnumSelectList<Kredvanta.Models.Enums.ResidenceType>()">
+                            <option value="">Select residence type</option>
+                        </select>
+
+                        <span asp-validation-for="ResidenceType"
+                              class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="PhysicalAddress" class="form-label">
+                            Physical Address <span class="text-danger">*</span>
+                        </label>
+
+                        <textarea asp-for="PhysicalAddress"
+                                  class="form-control"
+                                  placeholder="Provide directions or a more specific description of your residential location."></textarea>
+
+                        <span asp-validation-for="PhysicalAddress"
+                              class="text-danger small"></span>
+
+                        <div class="field-hint">
+                            Include useful location details such as building name,
+                            street, nearby landmark or plot number.
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="information-note">
+                    <i class="bi bi-shield-check me-2"></i>
+                    Your contact and residential information will be handled
+                    securely and used for legitimate account administration,
+                    communication and lending assessment purposes.
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center
+                    flex-wrap gap-3 mt-4 pt-3 border-top">
+
+                    <a asp-controller="Profile"
+                       asp-action="Step1"
+                       class="btn-secondary-custom">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Back
+                    </a>
+
+                    <button type="submit" class="btn-primary-custom">
+                        Save & Continue
+                        <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

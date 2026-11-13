@@ -1,0 +1,73 @@
+﻿
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build outputs
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+
+# Visual Studio generated files
+*.cache
+*.log
+*.pdb
+*.mdb
+
+# User-specific files
+*.rsuser
+*.sln.ide
+
+# NuGet
+*.nupkg
+*.snupkg
+
+# Local configuration and secrets
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Certificates and private keys
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Local databases
+*.mdf
+*.ldf
+*.sqlite
+*.db
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+Thumbs.db
+.DS_Store
+
+# Uploaded files and private document storage
+wwwroot/uploads/
+Storage/
+App_Data/Uploads/
+
+# IDE and tool folders
+.vscode/
+.idea/
+
+# Test results
+TestResults/
