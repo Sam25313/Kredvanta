@@ -22,20 +22,28 @@ The long-term goal is to provide an accessible, secure and efficient lending man
 ## Login Page
 ![Kredvanta Login Page](Screenshots/Login.png)
 ## Registration Page
-![Kredvanta Registration Page](Screenshots/Register.png)
+![Kredvanta Registration Page](Screenshots/Onboarding.png)
 ## Admin Dashboard	
 ![Kredvanta Dashboard](Screenshots/AdminDashboard.png)
 ## ProductPage
-![Kredvanta Product Page](Screenshots/ProductPage.png)
+![Kredvanta Product Page](Screenshots/ProductSection.png)
 
 
 ### Borrower Oboarding Workflow
 
-![Borrower Management](Screenshots/Onboarding.png)
+![Borrower Management](Screenshots/Step1.png)
+![Borrower Management](Screenshots/Step2.png)
+![Borrower Management](Screenshots/Step3.png)
+![Borrower Management](Screenshots/Review.png)
+
+![Borrower Management](Screenshots/BorrowerDashboard.png)
 
 ### Mobile Interface
 
 ![Kredvanta Mobile View](Screenshots/MobilePrev.png)
+
+## Footer
+![Borrower Management](Screenshots/Footer.png)
 
 *Screenshots will be added as the corresponding interfaces are completed.*
 
