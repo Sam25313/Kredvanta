@@ -12,20 +12,17 @@
             status, "([a-z])([A-Z])", "$1 $2");
     }
 
-    string ApplicationStatusClass(LoanApplicationStatus status)
+    string ApplicationStatusClass(LoanApplicationStatus status) => status switch
     {
-        return status switch
-        {
-            LoanApplicationStatus.Approved => "status-success",
-            LoanApplicationStatus.Rejected => "status-danger",
-            LoanApplicationStatus.Submitted => "status-info",
-            LoanApplicationStatus.UnderReview => "status-warning",
-            LoanApplicationStatus.DocumentsRequired => "status-warning",
-            LoanApplicationStatus.Recommended => "status-primary",
-            LoanApplicationStatus.Cancelled => "status-secondary",
-            _ => "status-secondary"
-        };
-    }
+        LoanApplicationStatus.Approved or LoanApplicationStatus.Disbursed => "status-success",
+        LoanApplicationStatus.Rejected or LoanApplicationStatus.Expired => "status-danger",
+        LoanApplicationStatus.Submitted => "status-info",
+        LoanApplicationStatus.UnderReview or LoanApplicationStatus.VerificationInProgress
+            or LoanApplicationStatus.DocumentsRequired => "status-warning",
+        LoanApplicationStatus.Recommended or LoanApplicationStatus.OfferIssued
+            or LoanApplicationStatus.AgreementPending or LoanApplicationStatus.ReadyForDisbursement => "status-primary",
+        _ => "status-secondary"
+    };
 
     string LoanStatusClass(LoanStatus status)
     {
@@ -55,19 +52,17 @@
 
     int GetApplicationProgress(LoanApplicationStatus status, int savedProgress)
     {
-        if (savedProgress > 0)
-            return Math.Min(100, Math.Max(0, savedProgress));
+        if (savedProgress > 0) return Math.Min(100, Math.Max(0, savedProgress));
 
         return status switch
         {
+            LoanApplicationStatus.Draft => 10,
             LoanApplicationStatus.Submitted => 20,
-            LoanApplicationStatus.UnderReview => 50,
             LoanApplicationStatus.DocumentsRequired => 40,
+            LoanApplicationStatus.UnderReview => 50,
             LoanApplicationStatus.Recommended => 75,
             LoanApplicationStatus.Approved => 100,
-            LoanApplicationStatus.Rejected => 100,
-            LoanApplicationStatus.Cancelled => 100,
-            _ => 0
+            _ => 0     // rejected and cancelled show no progress bar value
         };
     }
 
@@ -80,6 +75,7 @@
 
         return status switch
         {
+            LoanApplicationStatus.Draft => "Your draft is saved. Upload your documents and submit it.",
             LoanApplicationStatus.Submitted => "Application submitted successfully.",
             LoanApplicationStatus.UnderReview => "Your application is being reviewed.",
             LoanApplicationStatus.DocumentsRequired => "Additional documents are required.",
@@ -567,7 +563,7 @@
     <!-- Dashboard header -->
     <div class="dashboard-header">
         <div>
-            <div class="welcome-label">Kredvanta Borrower Portal</div>
+            <div class="welcome-label">Kings Microfinance Applicant Portal</div>
             <h1 class="dashboard-title">
                 Welcome back, @Model.BorrowerName
             </h1>
@@ -576,13 +572,21 @@
             </p>
         </div>
 
-        @if (!string.IsNullOrWhiteSpace(Model.BorrowerNumber))
-        {
-            <div class="borrower-number">
-                <i class="bi bi-person-badge me-1"></i>
-                @Model.BorrowerNumber
-            </div>
-        }
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            @if (Model.Journey.CanStartApplication)
+            {
+                <a asp-controller="LoanApplications" asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Apply for a loan
+                </a>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.BorrowerNumber))
+            {
+                <div class="borrower-number">
+                    <i class="bi bi-person-badge me-1"></i>
+                    @Model.BorrowerNumber
+                </div>
+            }
+        </div>
     </div>
 
     @if (string.IsNullOrWhiteSpace(Model.BorrowerNumber))
@@ -592,17 +596,15 @@
                 <i class="bi bi-person-lines-fill"></i>
             </div>
 
-            <h3>Complete your borrower profile</h3>
+            <h3>Complete your applicant profile</h3>
 
             <p>
-                Welcome to Kredvanta! Before you can access your full borrower
+                Welcome to Kings Microfinance! Before you can access your full applicant
                 dashboard and apply for a loan, you need to complete your
                 personal and contact information.
             </p>
 
-            <a asp-controller="Profile"
-               asp-action="Create"
-               class="btn btn-primary px-4 py-2">
+            <a asp-controller="Profile" asp-action="Index" class="btn btn-primary px-4 py-2">
                 Complete My Profile
                 <i class="bi bi-arrow-right ms-2"></i>
             </a>
@@ -610,56 +612,27 @@
     }
     else
     {
+
+        <partial name="_BorrowerJourney" model="Model.Journey" />
         <!-- KYC verification banner -->
-        @if (Model.KycStatus != KycStatus.Verified)
+        @if (Model.KycStatus == KycStatus.Verified)
         {
-            <div class="kyc-banner">
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                    <div>
-                        <div class="fw-bold mb-2">
-                            <i class="bi bi-shield-check me-2"></i>
-                            Account verification
-                        </div>
-
-                        <p>
-                            @if (Model.KycStatus == KycStatus.NotStarted)
-                            {
-                                <span>
-                                    Your identity verification has not started.
-                                    Complete verification to help us process your loan applications.
-                                </span>
-                            }
-                            else if (Model.KycStatus == KycStatus.Pending)
-                            {
-                                <span>
-                                    Your verification documents are being reviewed.
-                                    We will update you when the review is complete.
-                                </span>
-                            }
-                            else
-                            {
-                                <span>
-                                    Your verification needs attention.
-                                    Please review your submitted documents.
-                                </span>
-                            }
-                        </p>
-                    </div>
-
-                    <a asp-controller="Verification"
-                       asp-action="Index"
-                       class="btn">
-                        View Verification
-                        <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
-                </div>
+            <div class="alert alert-success border-0 rounded-3 mb-4">
+                <i class="bi bi-patch-check-fill me-2"></i>Your identity has been verified.
+            </div>
+        }
+        else if (Model.KycStatus == KycStatus.Rejected)
+        {
+            <div class="alert alert-warning border-0 rounded-3 mb-4">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                We could not complete your identity verification. Our team will contact you.
             </div>
         }
         else
         {
-            <div class="alert alert-success border-0 rounded-3 mb-4">
-                <i class="bi bi-patch-check-fill me-2"></i>
-                Your borrower identity has been verified.
+            <div class="alert alert-light border rounded-3 mb-4">
+                <i class="bi bi-shield-check me-2"></i>
+                Identity verification is done by our team after you submit an application. You do not need to do anything.
             </div>
         }
 
@@ -779,11 +752,11 @@
                 <div>
                     <h5 class="panel-title">Explore loan products</h5>
                     <div class="panel-subtitle">
-                        Explore financing options offered through Kredvanta
+                        Explore financing options offered through Kings Microfinance
                     </div>
                 </div>
 
-                <a asp-controller="BorrowerLoanProducts"
+                <a asp-controller="LoanProducts"
                    asp-action="Index"
                    class="view-all-link">
                     View all products <i class="bi bi-arrow-right"></i>
@@ -837,14 +810,22 @@
                                         </span>
                                     }
 
-                                    <div>
-                                        <a asp-controller="BorrowerLoanProducts"
+                                    <div class="d-grid gap-2">
+                                        <a asp-controller="LoanProducts"
                                            asp-action="Details"
                                            asp-route-id="@product.Id"
-                                           class="btn btn-outline-primary btn-sm w-100">
+                                           class="btn btn-outline-primary btn-sm">
                                             View product details
-                                            <i class="bi bi-arrow-right ms-1"></i>
                                         </a>
+                                        @if (product.IsAvailableForApplication && Model.Journey.CanStartApplication)
+                                        {
+                                            <a asp-controller="LoanApplications"
+                                               asp-action="Create"
+                                               asp-route-loanProductId="@product.Id"
+                                               class="btn btn-primary btn-sm">
+                                                <i class="bi bi-plus-circle me-1"></i>Apply for this loan
+                                            </a>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -917,14 +898,17 @@
                                         application.ProgressMessage)
                                 </div>
 
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="small text-muted">
-                                        Application progress
-                                    </span>
-                                    <span class="small fw-bold">
-                                        @progress%
-                                    </span>
-                                </div>
+                                @if (application.Status is not (LoanApplicationStatus.Rejected or LoanApplicationStatus.Cancelled))
+                                {
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="small text-muted">Application progress</span>
+                                        <span class="small fw-bold">@progress%</span>
+                                    </div>
+                                    <div class="progress mb-3">
+                                        <div class="progress-bar" role="progressbar" style="width: @(progress)%"
+                                             aria-valuenow="@progress" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                }
 
                                 <div class="progress mb-3">
                                     <div class="progress-bar"
@@ -962,7 +946,7 @@
                                 Your loan applications will appear here after you apply.
                             </p>
 
-                            <a asp-controller="BorrowerLoanProducts"
+                            <a asp-controller="LoanProducts"
                                asp-action="Index"
                                class="btn btn-primary btn-sm mt-3">
                                 Explore loan products
@@ -999,6 +983,12 @@
                                         <div class="loan-product">
                                             @loan.ProductName
                                         </div>
+                                    </div>
+                                    <div>
+                                        <a asp-controller="BorrowerLoan" asp-action="Statement" asp-route-id="@loan.Id"
+                                           class="view-all-link mt-2 d-inline-block">
+                                            View statement <i class="bi bi-arrow-right"></i>
+                                        </a>
                                     </div>
 
                                     <span class="status-badge @LoanStatusClass(loan.Status)">
@@ -1207,7 +1197,7 @@
 
     <div class="text-center text-muted small mt-4">
         <i class="bi bi-shield-lock me-1"></i>
-        Your Kredvanta account information is private and secure.
+        Your Kings Microfinance account information is private and secure.
     </div>
 
 </div>

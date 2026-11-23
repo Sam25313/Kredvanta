@@ -1,3 +1,105 @@
+:root {
+  --bs-primary: #166534;
+  --bs-primary-rgb: 22, 101, 52;
+  --bs-link-color: #166534;
+  --bs-link-hover-color: #14532d;
+  --bs-success: #15803d;
+  --bs-success-rgb: 21, 128, 61;
+}
+
+.navbar-brand .site-brand-logo {
+  display: block;
+  width: auto;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.navbar-app {
+  border-top: 3px solid #166534;
+  background: linear-gradient(110deg, #ffffff 60%, #f0fdf4 100%);
+}
+
+.navbar-account-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  max-width: min(22rem, 55vw);
+  padding: 0.35rem 0.75rem 0.35rem 0.4rem;
+  color: #1e293b;
+  background: #ffffff;
+  border: 1px solid #dbe7df;
+  border-radius: 999px;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.navbar-account-link:hover {
+  color: #14532d;
+  border-color: #86efac;
+  box-shadow: 0 4px 14px rgba(22, 101, 52, 0.12);
+  transform: translateY(-1px);
+}
+
+.navbar-account-link:focus-visible {
+  outline: 3px solid rgba(22, 101, 52, 0.28);
+  outline-offset: 2px;
+}
+
+.navbar-account-avatar {
+  display: inline-flex;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #14532d, #22a052);
+  border: 2px solid #dcfce7;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+}
+
+.navbar-account-email {
+  overflow: hidden;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navbar-account-logout {
+  color: #475569;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.navbar-account-logout:hover {
+  color: #166534;
+}
+
+.btn-primary {
+  --bs-btn-bg: #166534;
+  --bs-btn-border-color: #166534;
+  --bs-btn-hover-bg: #14532d;
+  --bs-btn-hover-border-color: #14532d;
+  --bs-btn-active-bg: #14532d;
+  --bs-btn-active-border-color: #14532d;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #166534;
+  --bs-btn-border-color: #166534;
+  --bs-btn-hover-bg: #166534;
+  --bs-btn-hover-border-color: #166534;
+  --bs-btn-active-bg: #14532d;
+  --bs-btn-active-border-color: #14532d;
+}
+
 html {
   font-size: 14px;
 }
@@ -9,7 +111,7 @@ html {
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #22c55e;
 }
 
 html {

@@ -1,0 +1,192 @@
+﻿@model Kredvanta.ViewModels.LoanApplications.ScreeningPageViewModel
+
+@{
+    ViewData["Title"] = "Checking your documents";
+}
+
+<style>
+    .scan-doc {
+        position: relative;
+        width: 96px;
+        height: 128px;
+        margin: 0 auto 1.25rem;
+        border: 2px solid var(--bs-secondary-color, #6c757d);
+        border-radius: .5rem;
+        overflow: hidden;
+        background-color: var(--bs-tertiary-bg, #f8f9fa);
+        background-image: repeating-linear-gradient(to bottom, transparent 0 14px, rgba(128,128,128,.25) 14px 17px);
+    }
+
+    .scan-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 3px;
+        background: var(--bs-primary, #0d6efd);
+        box-shadow: 0 0 10px 2px var(--bs-primary, #0d6efd);
+        animation: scan 1.4s ease-in-out infinite alternate;
+    }
+
+    .scan-doc.done .scan-line {
+        animation: none;
+        opacity: 0;
+    }
+
+    @@keyframes scan {
+        from {
+            top: 0;
+        }
+
+        to {
+            top: calc(100% - 3px);
+        }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .scan-line {
+            animation: none;
+            top: 50%;
+        }
+    }
+</style>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+
+                    <div id="scanner" class="scan-doc" aria-hidden="true">
+                        <div class="scan-line"></div>
+                    </div>
+
+                    <h4 id="headline" class="fw-bold mb-2" role="status" aria-live="polite">
+                        Reviewing your documents
+                    </h4>
+                    <p id="subline" class="text-muted mb-4">
+                        We are checking them against the information you provided.
+                        Application @Model.ApplicationNumber
+                    </p>
+
+                    <ul id="docList" class="list-group list-group-flush text-start mb-4"></ul>
+
+                    <div id="actions" class="d-none d-flex justify-content-center gap-2">
+                        <a asp-action="Upload"
+                           asp-route-applicationId="@Model.LoanApplicationId"
+                           class="btn btn-outline-secondary">
+                            Upload another document
+                        </a>
+                        <a asp-controller="LoanApplications"
+                           asp-action="Details"
+                           asp-route-id="@Model.LoanApplicationId"
+                           class="btn btn-primary">
+                            Continue to application
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const statusUrl = '@Url.Action("ScreeningStatus", "LoanApplicationDocuments", new { applicationId = Model.LoanApplicationId })';
+            const list = document.getElementById('docList');
+            const scanner = document.getElementById('scanner');
+            const headline = document.getElementById('headline');
+            const subline = document.getElementById('subline');
+            const actions = document.getElementById('actions');
+
+            const icons = {
+                Queued: 'bi-hourglass-split text-muted',
+                Scanning: 'bi-search text-primary',
+                Passed: 'bi-check-circle-fill text-success',
+                Flagged: 'bi-exclamation-triangle-fill text-warning',
+                Failed: 'bi-exclamation-triangle-fill text-warning',
+                NotStarted: 'bi-dash-circle text-muted'
+            };
+
+            const startedAt = Date.now();
+            let failures = 0;
+
+            function showActions() {
+                actions.classList.remove('d-none');
+            }
+
+            function render(documents) {
+                list.replaceChildren(...documents.map(function (d) {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex align-items-start gap-2 px-0 bg-transparent';
+
+                    const icon = document.createElement('i');
+                    icon.className = 'bi fs-5 ' + (icons[d.status] || icons.NotStarted);
+
+                    const body = document.createElement('div');
+                    const name = document.createElement('div');
+                    name.className = 'fw-semibold';
+                    name.textContent = d.name;
+                    const msg = document.createElement('div');
+                    msg.className = 'small text-muted';
+                    msg.textContent = d.message;
+
+                    body.append(name, msg);
+                    li.append(icon, body);
+                    return li;
+                }));
+            }
+
+            function finish(documents) {
+                scanner.classList.add('done');
+                const attention = documents.some(function (d) {
+                    return d.status === 'Flagged' || d.status === 'Failed';
+                });
+                headline.textContent = attention
+                    ? 'Checks finished: some documents need a closer look'
+                    : 'Checks finished';
+                subline.textContent = attention
+                    ? 'You can replace a document or continue. A loan officer reviews everything before any decision is made.'
+                    : 'A loan officer will still review your documents before any decision is made.';
+                showActions();
+            }
+
+            async function poll() {
+                try {
+                    const res = await fetch(statusUrl, {
+                        headers: { 'Accept': 'application/json' },
+                        credentials: 'same-origin'
+                    });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                    const data = await res.json();
+                    failures = 0;
+                    render(data.documents);
+
+                    if (data.done) {
+                        finish(data.documents);
+                        return;
+                    }
+                } catch (e) {
+                    failures++;
+                    if (failures >= 3) {
+                        scanner.classList.add('done');
+                        subline.textContent = 'We lost contact with the server. Your documents are saved; you can continue.';
+                        showActions();
+                        return;
+                    }
+                }
+
+                if (Date.now() - startedAt > 120000) {
+                    subline.textContent = 'This is taking longer than usual. You can continue; the checks will finish in the background.';
+                    showActions();
+                }
+                setTimeout(poll, 1500);
+            }
+
+            poll();
+        })();
+    </script>
+}

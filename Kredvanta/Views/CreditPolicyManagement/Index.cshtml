@@ -1,0 +1,81 @@
+@using Kredvanta.Models.Credit
+@model IReadOnlyList<CreditPolicyVersion>
+
+@{
+	ViewData["Title"] = "Manage credit policies";
+	Layout = "_StaffLayout";
+}
+
+<div class="container-fluid py-4">
+	<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+		<div>
+			<span class="text-muted small">CREDIT GOVERNANCE</span>
+			<h1 class="h2 fw-bold mb-1">Manage credit policies</h1>
+			<p class="text-muted mb-0">Create a version from formally approved underwriting settings, then activate it for assessments.</p>
+		</div>
+		<a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>New policy version</a>
+	</div>
+
+	@if (TempData["Success"] is string success)
+	{
+		<div class="alert alert-success" role="status">@success</div>
+	}
+	@if (TempData["Error"] is string error)
+	{
+		<div class="alert alert-danger" role="alert">@error</div>
+	}
+
+	<div class="alert alert-info" role="note">
+		Only activate values that have completed your organisation's required policy approval. Activating a version immediately makes it the policy used for new assessments; prior versions and recorded assessments are retained.
+	</div>
+
+	<div class="card border-0 shadow-sm rounded-4">
+		<div class="table-responsive">
+			<table class="table table-hover align-middle mb-0">
+				<thead class="table-light">
+					<tr>
+						<th>Version</th>
+						<th>Effective from</th>
+						<th>Affordability settings</th>
+						<th>Status</th>
+						<th>Approved by</th>
+						<th class="text-end">Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					@if (Model.Count == 0)
+					{
+						<tr><td colspan="6" class="text-center text-muted py-4">No internal credit policies have been created.</td></tr>
+					}
+					@foreach (var policy in Model)
+					{
+						<tr>
+							<td><div class="fw-semibold">v@policy.VersionNumber · @policy.Name</div><div class="small text-muted">Calculation @policy.CalculationVersion</div></td>
+							<td>@policy.EffectiveFrom.ToString("dd MMM yyyy")</td>
+							<td class="small">Maximum debt service ratio: @policy.MaxDebtServiceRatio.ToString("P1")<br />Minimum net monthly income: KES @policy.MinNetMonthlyIncome.ToString("N2")<br />Minimum disposable income: KES @policy.MinDisposableAfterInstalment.ToString("N2")</td>
+							<td>
+								@if (policy.IsActive)
+								{
+									<span class="badge text-bg-success">Active</span>
+								}
+								else
+								{
+									<span class="badge text-bg-secondary">Draft / inactive</span>
+								}
+							</td>
+							<td>@(policy.ApprovedBy ?? "—")</td>
+							<td class="text-end">
+								@if (!policy.IsActive)
+								{
+									<form asp-action="Activate" asp-route-id="@policy.Id" method="post" onsubmit="return confirm('Activate this formally approved policy now? It will replace the active policy for new assessments.');">
+										<button type="submit" class="btn btn-sm btn-outline-success">Approve and activate</button>
+									</form>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>

@@ -4,15 +4,25 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 
-<ul class="navbar-nav">
+@{
+    var accountLabel = User.Identity?.Name?.Trim();
+    var accountDisplayLabel = string.IsNullOrWhiteSpace(accountLabel) ? "Account" : accountLabel;
+    var avatarInitials = string.IsNullOrWhiteSpace(accountLabel)
+        ? "U"
+        : accountLabel[..Math.Min(2, accountLabel.Length)].ToUpperInvariant();
+}
+
+<ul class="navbar-nav align-items-sm-center">
     @if (SignInManager.IsSignedIn(User))
     {
-        <li class="nav-item">
-            <a class="nav-link text-dark"
+        <li class="nav-item me-sm-2">
+            <a class="navbar-account-link"
                asp-area="Identity"
                asp-page="/Account/Manage/Index"
-               title="Manage">
-                Hello @User.Identity?.Name!
+               title="Manage account"
+               aria-label="Manage account for @accountDisplayLabel">
+                <span class="navbar-account-avatar" aria-hidden="true">@avatarInitials</span>
+                <span class="navbar-account-email">@accountDisplayLabel</span>
             </a>
         </li>
 
@@ -22,7 +32,7 @@
                   asp-page="/Account/Logout"
                   asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })"
                   method="post">
-                <button type="submit" class="nav-link btn btn-link text-dark">
+                <button type="submit" class="nav-link btn btn-link navbar-account-logout">
                     Logout
                 </button>
             </form>

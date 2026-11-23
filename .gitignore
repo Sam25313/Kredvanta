@@ -29,9 +29,12 @@ artifacts/
 
 # Local configuration and secrets
 appsettings.Development.json
+appsettings.production.json
+prod-migration.sql
 appsettings.Local.json
 secrets.json
-
+kredvanta.runasp.net-WebDeployment.publishsettings
+dotnet-tools.json
 # Environment variables
 .env
 .env.*

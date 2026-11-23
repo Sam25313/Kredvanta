@@ -1,0 +1,114 @@
+﻿@using static Kredvanta.Models.Enums.LendingEnums
+@model Kredvanta.Controllers.StaffRepaymentsController.LoanPage
+@{
+    ViewData["Title"] = Model.Loan.LoanNumber; var l = Model.Loan;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="fw-bold mb-1">@l.LoanNumber</h2>
+        <span class="badge @(l.Status == LoanStatus.Overdue ? "bg-danger" : "bg-secondary")">@l.Status</span>
+        <span class="text-muted ms-2">@l.Borrower.FirstName @l.Borrower.LastName, @l.Borrower.PhoneNumber</span>
+    </div>
+    <a class="btn btn-outline-secondary" asp-action="Index">Back</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="small text-muted">Principal</div><h5 class="fw-bold">@l.CurrencyCode @l.PrincipalAmount.ToString("N2")</h5></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="small text-muted">Total repayable</div><h5 class="fw-bold">@l.CurrencyCode @l.TotalRepayable.ToString("N2")</h5></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="small text-muted">Outstanding</div><h5 class="fw-bold text-danger">@l.CurrencyCode @l.OutstandingBalance.ToString("N2")</h5></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="small text-muted">Maturity</div><h5 class="fw-bold">@(l.MaturityDate?.ToString("dd MMM yyyy"))</h5></div></div></div>
+</div>
+
+@if (Model.CanRecord)
+{
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Record a payment received</h5>
+            <form method="post" asp-action="Pay" asp-route-id="@l.Id" class="row g-3">
+                <input type="hidden" name="IdempotencyKey" value="@Model.IdempotencyKey" />
+                <div class="col-md-2">
+                    <label class="form-label">Amount</label>
+                    <input name="Amount" type="number" step="0.01" min="0.01" class="form-control" required />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Method</label>
+                    <select name="Method" class="form-select" asp-items="Html.GetEnumSelectList<RepaymentMethod>()"></select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Provider reference</label>
+                    <input name="Reference" class="form-control" placeholder="Required except for cash" />
+                </div>
+                <div class="col-md-2"><label class="form-label">Payer phone</label><input name="PayerPhone" class="form-control" /></div>
+                <div class="col-md-3">
+                    <label class="form-label">Received at</label>
+                    <input name="ReceivedAt" type="datetime-local" class="form-control" />
+                </div>
+                <div class="col-12"><button class="btn btn-primary">Record payment</button></div>
+            </form>
+        </div>
+    </div>
+}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">Schedule</div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr><th class="ps-3">#</th><th>Due</th><th>Due (KES)</th><th>Paid</th><th>Left</th><th>Status</th></tr></thead>
+            <tbody>
+                @foreach (var s in Model.Schedule)
+                {
+                    <tr class="@(s.Status == ScheduleStatus.Overdue ? "table-danger" : "")">
+                        <td class="ps-3">@s.InstallmentNumber</td>
+                        <td>@s.DueDate.ToString("dd MMM yyyy")</td>
+                        <td>@s.TotalDue.ToString("N2")</td>
+                        <td>@s.AmountPaid.ToString("N2")</td>
+                        <td>@((s.TotalDue - s.AmountPaid).ToString("N2"))</td>
+                        <td>@s.Status</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white fw-bold">Payments</div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr><th class="ps-3">Receipt</th><th>Received</th><th>Amount</th><th>Method</th><th>Reference</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.Payments)
+                {
+                    <tr class="@(p.Status == RepaymentStatus.Reversed ? "text-muted" : "")">
+                        <td class="ps-3">@p.ReceiptNumber</td>
+                        <td>@p.ReceivedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</td>
+                        <td>@p.Amount.ToString("N2")</td>
+                        <td>@p.Method</td>
+                        <td>@p.TransactionReference</td>
+                        <td>
+                            <span class="badge bg-secondary">@p.Status</span>
+                            @if (!string.IsNullOrEmpty(p.ReversalReason))
+                            {
+                                <div class="small">@p.ReversalReason</div>
+                            }
+                        </td>
+                        <td class="pe-3">
+                            @if (p.Status == RepaymentStatus.Confirmed)
+                            {
+                                <form method="post" asp-action="Reverse" asp-route-id="@l.Id" asp-route-repaymentId="@p.Id" class="d-flex gap-1"
+                                      onsubmit="return confirm('Reverse this payment? The balance and schedule will be restored.');">
+                                    <input name="reason" class="form-control form-control-sm" placeholder="Reason" required />
+                                    <button class="btn btn-sm btn-outline-danger">Reverse</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Payments.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-3">No payments yet.</td></tr>
+                }
+            </tbody>        </table>
+        </div>
+    </div>

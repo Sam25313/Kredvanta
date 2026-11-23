@@ -28,10 +28,20 @@ namespace Kredvanta.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal>("AssessedAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("AssessedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("AssessedByUserId")
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("AssessedTermPeriods")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("AssessmentDate")
                         .HasColumnType("datetime2");
@@ -39,8 +49,16 @@ namespace Kredvanta.Data.Migrations
                     b.Property<string>("AssessmentNotes")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("CalculationVersion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CreditPolicyVersionId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("DebtServiceRatio")
                         .HasPrecision(9, 4)
@@ -54,6 +72,9 @@ namespace Kredvanta.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<bool>("IsCurrent")
+                        .HasColumnType("bit");
+
                     b.Property<Guid>("LoanApplicationId")
                         .HasColumnType("uniqueidentifier");
 
@@ -64,6 +85,10 @@ namespace Kredvanta.Data.Migrations
                     b.Property<decimal>("MonthlyIncome")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<decimal>("OtherMonthlyObligations")
                         .HasPrecision(18, 2)
@@ -76,6 +101,10 @@ namespace Kredvanta.Data.Migrations
                     b.Property<int>("Recommendation")
                         .HasColumnType("int");
 
+                    b.Property<string>("RiskFlags")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -83,7 +112,9 @@ namespace Kredvanta.Data.Migrations
 
                     b.HasIndex("AssessedByUserId");
 
-                    b.HasIndex("LoanApplicationId");
+                    b.HasIndex("CreditPolicyVersionId");
+
+                    b.HasIndex("LoanApplicationId", "IsCurrent");
 
                     b.ToTable("CreditAssessments");
                 });
@@ -106,7 +137,8 @@ namespace Kredvanta.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CancellationReason")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -129,6 +161,12 @@ namespace Kredvanta.Data.Migrations
                     b.Property<int>("RequestedTermPeriods")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -147,9 +185,14 @@ namespace Kredvanta.Data.Migrations
 
                     b.HasIndex("LoanProductId");
 
+                    b.HasIndex("Status");
+
                     b.HasIndex("BorrowerId", "Status");
 
-                    b.ToTable("LoanApplications");
+                    b.ToTable("LoanApplications", t =>
+                        {
+                            t.HasCheckConstraint("CK_LoanApplication_Request", "[RequestedAmount] > 0 AND [RequestedTermPeriods] > 0");
+                        });
                 });
 
             modelBuilder.Entity("Kredvanta.Models.Applications.LoanApplicationDocument", b =>
@@ -174,6 +217,9 @@ namespace Kredvanta.Data.Migrations
                     b.Property<long>("FileSizeBytes")
                         .HasColumnType("bigint");
 
+                    b.Property<bool>("IsCurrent")
+                        .HasColumnType("bit");
+
                     b.Property<Guid>("LoanApplicationId")
                         .HasColumnType("uniqueidentifier");
 
@@ -185,8 +231,16 @@ namespace Kredvanta.Data.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<string>("RejectionReasonCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("ReplacesDocumentId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ReviewComments")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<int>("ReviewStatus")
                         .HasColumnType("int");
@@ -197,6 +251,27 @@ namespace Kredvanta.Data.Migrations
                     b.Property<string>("ReviewedByUserId")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ScreenedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ScreeningDetailsJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ScreeningStartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ScreeningStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ScreeningSummary")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Sha256Hash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("StorageKey")
                         .IsRequired()
@@ -211,15 +286,27 @@ namespace Kredvanta.Data.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("Id");
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
 
-                    b.HasIndex("LoanApplicationId");
+                    b.HasKey("Id");
 
                     b.HasIndex("LoanProductRequiredDocumentId");
 
+                    b.HasIndex("ReplacesDocumentId");
+
                     b.HasIndex("ReviewedByUserId");
 
+                    b.HasIndex("ScreeningStatus");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
                     b.HasIndex("UploadedByUserId");
+
+                    b.HasIndex("LoanApplicationId", "LoanProductRequiredDocumentId")
+                        .IsUnique()
+                        .HasFilter("[IsCurrent] = 1 AND [LoanProductRequiredDocumentId] IS NOT NULL");
 
                     b.ToTable("LoanApplicationDocuments");
                 });
@@ -295,7 +382,7 @@ namespace Kredvanta.Data.Migrations
 
                     b.HasIndex("ChangedByUserId");
 
-                    b.HasIndex("LoanApplicationId", "CreatedAt");
+                    b.HasIndex("LoanApplicationId", "ChangedAt");
 
                     b.ToTable("LoanApplicationStatusHistories");
                 });
@@ -518,8 +605,8 @@ namespace Kredvanta.Data.Migrations
 
                     b.Property<string>("DocumentType")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("FileExtension")
                         .IsRequired()
@@ -546,8 +633,8 @@ namespace Kredvanta.Data.Migrations
 
                     b.Property<string>("StorageKey")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -559,7 +646,7 @@ namespace Kredvanta.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BorrowerId", "DocumentType");
+                    b.HasIndex("BorrowerId", "DocumentType", "CreatedAt");
 
                     b.ToTable("BorrowerVerificationDocuments");
                 });
@@ -612,6 +699,420 @@ namespace Kredvanta.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Guarantors");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Contracts.AgreementSignature", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AgreementHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("LoanAgreementId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("SignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SignedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LoanAgreementId")
+                        .IsUnique();
+
+                    b.HasIndex("SignedByUserId");
+
+                    b.ToTable("AgreementSignatures");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Contracts.LoanAgreement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AgreementNumber")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("GeneratedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("LoanApplicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("LoanOfferId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Sha256Hash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TemplateVersion")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AgreementNumber")
+                        .IsUnique();
+
+                    b.HasIndex("LoanApplicationId");
+
+                    b.HasIndex("LoanOfferId")
+                        .IsUnique();
+
+                    b.ToTable("LoanAgreements");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Contracts.LoanOffer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("AcceptedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AcceptedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal>("AnnualInterestRate")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("decimal(9,4)");
+
+                    b.Property<string>("Conditions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<string>("DeclineReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("FirstDueDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("InstalmentAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("InterestMethod")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IssuedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("LoanApplicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("MaturityDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("Principal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ProcessingFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ProductCodeSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("ProductNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("RepaymentFrequency")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("ScheduleJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TermPeriods")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalInterest")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalRepayable")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcceptedByUserId");
+
+                    b.HasIndex("IssuedByUserId");
+
+                    b.HasIndex("LoanApplicationId")
+                        .IsUnique()
+                        .HasFilter("[Status] IN (0, 1)");
+
+                    b.HasIndex("LoanApplicationId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("LoanOffers", t =>
+                        {
+                            t.HasCheckConstraint("CK_LoanOffer_Amounts", "[Principal] > 0 AND [TotalRepayable] > 0 AND [InstalmentAmount] > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Credit.ApplicantCreditPolicyPublication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AssessmentAndDecision")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly?>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<string>("EligibilityAndDocuments")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImportantNotice")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PersonalInformation")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PricingAndOffers")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PublishedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PurposeAndScope")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RepaymentAndComplaints")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsPublished")
+                        .IsUnique()
+                        .HasFilter("[IsPublished] = 1");
+
+                    b.HasIndex("VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("ApplicantCreditPolicyPublications");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Credit.ApplicantCreditPolicyReference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ApplicantCreditPolicyPublicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicantCreditPolicyPublicationId");
+
+                    b.ToTable("ApplicantCreditPolicyReferences");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Credit.CreditPolicyVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CalculationVersion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("DualApprovalAbove")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("MaxDebtServiceRatio")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("decimal(9,4)");
+
+                    b.Property<decimal>("MinDisposableAfterInstalment")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MinNetMonthlyIncome")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
+
+                    b.HasIndex("VersionNumber")
+                        .IsUnique();
+
+                    b.ToTable("CreditPolicyVersions");
                 });
 
             modelBuilder.Entity("Kredvanta.Models.Identity.ApplicationUser", b =>
@@ -731,6 +1232,9 @@ namespace Kredvanta.Data.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
 
+                    b.Property<Guid?>("LoanOfferId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateOnly?>("MaturityDate")
                         .HasColumnType("date");
 
@@ -762,6 +1266,12 @@ namespace Kredvanta.Data.Migrations
                     b.Property<int>("RepaymentFrequency")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date");
 
@@ -789,6 +1299,10 @@ namespace Kredvanta.Data.Migrations
                     b.HasIndex("LoanNumber")
                         .IsUnique();
 
+                    b.HasIndex("LoanOfferId")
+                        .IsUnique()
+                        .HasFilter("[LoanOfferId] IS NOT NULL");
+
                     b.ToTable("Loans", t =>
                         {
                             t.HasCheckConstraint("CK_Loan_FinancialAmounts", "[PrincipalAmount] >= 0 AND [OutstandingBalance] >= 0 AND [TotalRepayable] >= 0");
@@ -804,17 +1318,23 @@ namespace Kredvanta.Data.Migrations
                     b.Property<int>("ApprovalLevel")
                         .HasColumnType("int");
 
+                    b.Property<decimal?>("ApprovedAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Comments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Conditions")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("DecidedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("Decision")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("DecisionDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("LoanApplicationId")
                         .HasColumnType("uniqueidentifier");
@@ -852,6 +1372,10 @@ namespace Kredvanta.Data.Migrations
                     b.Property<DateTime?>("DisbursedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("IdempotencyKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<Guid>("LoanId")
                         .HasColumnType("uniqueidentifier");
 
@@ -870,6 +1394,12 @@ namespace Kredvanta.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -882,11 +1412,22 @@ namespace Kredvanta.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique()
+                        .HasFilter("[IdempotencyKey] IS NOT NULL");
+
                     b.HasIndex("LoanId");
 
                     b.HasIndex("ProcessedByUserId");
 
-                    b.ToTable("LoanDisbursements");
+                    b.HasIndex("TransactionReference")
+                        .IsUnique()
+                        .HasFilter("[TransactionReference] IS NOT NULL");
+
+                    b.ToTable("LoanDisbursements", t =>
+                        {
+                            t.HasCheckConstraint("CK_LoanDisbursement_Amount", "[Amount] > 0");
+                        });
                 });
 
             modelBuilder.Entity("Kredvanta.Models.Products.LoanProduct", b =>
@@ -1057,8 +1598,8 @@ namespace Kredvanta.Data.Migrations
 
                     b.Property<string>("ReceiptNumber")
                         .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("ReceivedAt")
                         .HasColumnType("datetime2");
@@ -1067,6 +1608,23 @@ namespace Kredvanta.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ReversalReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReversedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReversedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -1091,7 +1649,10 @@ namespace Kredvanta.Data.Migrations
 
                     b.HasIndex("ReceivedByUserId");
 
-                    b.ToTable("Repayments");
+                    b.ToTable("Repayments", t =>
+                        {
+                            t.HasCheckConstraint("CK_Repayment_Amount", "[Amount] > 0");
+                        });
                 });
 
             modelBuilder.Entity("Kredvanta.Models.Repayments.RepaymentAllocation", b =>
@@ -1187,7 +1748,10 @@ namespace Kredvanta.Data.Migrations
                     b.HasIndex("LoanId", "InstallmentNumber")
                         .IsUnique();
 
-                    b.ToTable("RepaymentSchedules");
+                    b.ToTable("RepaymentSchedules", t =>
+                        {
+                            t.HasCheckConstraint("CK_RepaymentSchedule_Amounts", "[PrincipalDue] >= 0 AND [InterestDue] >= 0 AND [FeesDue] >= 0 AND [TotalDue] >= 0 AND [AmountPaid] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("Kredvanta.Models.System.AuditLog", b =>
@@ -1198,8 +1762,8 @@ namespace Kredvanta.Data.Migrations
 
                     b.Property<string>("Action")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime>("ActionDate")
                         .HasColumnType("datetime2");
@@ -1211,20 +1775,21 @@ namespace Kredvanta.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<string>("EntityId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("EntityName")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1242,6 +1807,8 @@ namespace Kredvanta.Data.Migrations
                     b.HasIndex("ActionDate");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("EntityName", "EntityId");
 
                     b.ToTable("AuditLogs");
                 });
@@ -1267,7 +1834,8 @@ namespace Kredvanta.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("RelatedEntityId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -1290,6 +1858,124 @@ namespace Kredvanta.Data.Migrations
                     b.HasIndex("UserId", "IsRead");
 
                     b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Verification.EmploymentVerification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("AttemptedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Channel")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ConfirmedContractType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConfirmedJobTitle")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("ConfirmedNetSalary")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateOnly?>("ConfirmedStartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ContactDetailUsed")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ContactIndependentlySourced")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ContactPersonName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactedParty")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("LoanApplicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VerifiedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LoanApplicationId");
+
+                    b.HasIndex("VerifiedByUserId");
+
+                    b.ToTable("EmploymentVerifications");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Verification.KycReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BorrowerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("DocumentsAppearGenuine")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IdentityMatchesProfile")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("LoanApplicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Outcome")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PreviousStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReasonCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BorrowerId");
+
+                    b.HasIndex("ReviewedByUserId");
+
+                    b.ToTable("KycReviews");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -1437,6 +2123,11 @@ namespace Kredvanta.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Kredvanta.Models.Credit.CreditPolicyVersion", "CreditPolicyVersion")
+                        .WithMany()
+                        .HasForeignKey("CreditPolicyVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Kredvanta.Models.Applications.LoanApplication", "LoanApplication")
                         .WithMany("CreditAssessments")
                         .HasForeignKey("LoanApplicationId")
@@ -1444,6 +2135,8 @@ namespace Kredvanta.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("AssessedByUser");
+
+                    b.Navigation("CreditPolicyVersion");
 
                     b.Navigation("LoanApplication");
                 });
@@ -1487,10 +2180,15 @@ namespace Kredvanta.Data.Migrations
                         .HasForeignKey("LoanProductRequiredDocumentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Kredvanta.Models.Applications.LoanApplicationDocument", "ReplacesDocument")
+                        .WithMany()
+                        .HasForeignKey("ReplacesDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Kredvanta.Models.Identity.ApplicationUser", "ReviewedByUser")
                         .WithMany()
                         .HasForeignKey("ReviewedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Kredvanta.Models.Identity.ApplicationUser", "UploadedByUser")
                         .WithMany()
@@ -1499,6 +2197,8 @@ namespace Kredvanta.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("LoanApplication");
+
+                    b.Navigation("ReplacesDocument");
 
                     b.Navigation("RequiredDocument");
 
@@ -1531,7 +2231,7 @@ namespace Kredvanta.Data.Migrations
                     b.HasOne("Kredvanta.Models.Identity.ApplicationUser", "ChangedByUser")
                         .WithMany()
                         .HasForeignKey("ChangedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Kredvanta.Models.Applications.LoanApplication", "LoanApplication")
                         .WithMany("StatusHistory")
@@ -1559,10 +2259,85 @@ namespace Kredvanta.Data.Migrations
                     b.HasOne("Kredvanta.Models.Borrowers.Borrower", "Borrower")
                         .WithMany("VerificationDocuments")
                         .HasForeignKey("BorrowerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Borrower");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Contracts.AgreementSignature", b =>
+                {
+                    b.HasOne("Kredvanta.Models.Contracts.LoanAgreement", "LoanAgreement")
+                        .WithMany()
+                        .HasForeignKey("LoanAgreementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kredvanta.Models.Identity.ApplicationUser", "SignedByUser")
+                        .WithMany()
+                        .HasForeignKey("SignedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("LoanAgreement");
+
+                    b.Navigation("SignedByUser");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Contracts.LoanAgreement", b =>
+                {
+                    b.HasOne("Kredvanta.Models.Applications.LoanApplication", "LoanApplication")
+                        .WithMany()
+                        .HasForeignKey("LoanApplicationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kredvanta.Models.Contracts.LoanOffer", "LoanOffer")
+                        .WithMany()
+                        .HasForeignKey("LoanOfferId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("LoanApplication");
+
+                    b.Navigation("LoanOffer");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Contracts.LoanOffer", b =>
+                {
+                    b.HasOne("Kredvanta.Models.Identity.ApplicationUser", "AcceptedByUser")
+                        .WithMany()
+                        .HasForeignKey("AcceptedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kredvanta.Models.Identity.ApplicationUser", "IssuedByUser")
+                        .WithMany()
+                        .HasForeignKey("IssuedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kredvanta.Models.Applications.LoanApplication", "LoanApplication")
+                        .WithMany()
+                        .HasForeignKey("LoanApplicationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AcceptedByUser");
+
+                    b.Navigation("IssuedByUser");
+
+                    b.Navigation("LoanApplication");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Credit.ApplicantCreditPolicyReference", b =>
+                {
+                    b.HasOne("Kredvanta.Models.Credit.ApplicantCreditPolicyPublication", "Publication")
+                        .WithMany("References")
+                        .HasForeignKey("ApplicantCreditPolicyPublicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Publication");
                 });
 
             modelBuilder.Entity("Kredvanta.Models.Loans.Loan", b =>
@@ -1579,9 +2354,16 @@ namespace Kredvanta.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Kredvanta.Models.Contracts.LoanOffer", "LoanOffer")
+                        .WithMany()
+                        .HasForeignKey("LoanOfferId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Borrower");
 
                     b.Navigation("LoanApplication");
+
+                    b.Navigation("LoanOffer");
                 });
 
             modelBuilder.Entity("Kredvanta.Models.Loans.LoanApproval", b =>
@@ -1687,7 +2469,7 @@ namespace Kredvanta.Data.Migrations
                     b.HasOne("Kredvanta.Models.Identity.ApplicationUser", "User")
                         .WithMany("AuditLogs")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("User");
                 });
@@ -1701,6 +2483,44 @@ namespace Kredvanta.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Verification.EmploymentVerification", b =>
+                {
+                    b.HasOne("Kredvanta.Models.Applications.LoanApplication", "LoanApplication")
+                        .WithMany()
+                        .HasForeignKey("LoanApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kredvanta.Models.Identity.ApplicationUser", "VerifiedByUser")
+                        .WithMany()
+                        .HasForeignKey("VerifiedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LoanApplication");
+
+                    b.Navigation("VerifiedByUser");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Verification.KycReview", b =>
+                {
+                    b.HasOne("Kredvanta.Models.Borrowers.Borrower", "Borrower")
+                        .WithMany()
+                        .HasForeignKey("BorrowerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kredvanta.Models.Identity.ApplicationUser", "ReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Borrower");
+
+                    b.Navigation("ReviewedByUser");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -1781,6 +2601,11 @@ namespace Kredvanta.Data.Migrations
             modelBuilder.Entity("Kredvanta.Models.Borrowers.Guarantor", b =>
                 {
                     b.Navigation("LoanApplicationGuarantors");
+                });
+
+            modelBuilder.Entity("Kredvanta.Models.Credit.ApplicantCreditPolicyPublication", b =>
+                {
+                    b.Navigation("References");
                 });
 
             modelBuilder.Entity("Kredvanta.Models.Identity.ApplicationUser", b =>

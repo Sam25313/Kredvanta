@@ -1,0 +1,58 @@
+﻿@using static Kredvanta.Models.Enums.LendingEnums
+@model List<Kredvanta.ViewModels.Staff.VerificationQueueItem>
+@{
+    ViewData["Title"] = "Verification Queue";
+    //Layout = User.IsInRole("Administrator") ? "_AdminLayout" : "_Layout";
+}
+@{
+    Layout = "_StaffLayout";
+}
+
+<div class="container-fluid py-4">
+    <h2 class="fw-bold mb-1">Verification Queue</h2>
+    <p class="text-muted">Oldest submissions first.</p>
+
+    @foreach (var (key, css) in new[] { ("Success", "success"), ("Error", "danger") })
+    {
+        if (TempData[key] != null)
+        {
+            <div class="alert alert-@css">@TempData[key]</div>
+        }
+    }
+
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Application</th>
+                        <th>Applicant</th>
+                        <th>Status</th>
+                        <th>KYC</th>
+                        <th>Employment</th>
+                        <th>Submitted</th>
+                        <th class="pe-4"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-semibold">@a.ApplicationNumber</td>
+                            <td>@a.BorrowerName</td>
+                            <td><span class="badge bg-secondary">@a.Status</span></td>
+                            <td><span class="badge @(a.KycStatus == KycStatus.Verified ? "bg-success" : "bg-warning text-dark")">@a.KycStatus</span></td>
+                            <td><span class="badge @(a.EmploymentState == "Verified" ? "bg-success" : "bg-warning text-dark")">@a.EmploymentState</span></td>
+                            <td>@(a.SubmittedAt?.ToLocalTime().ToString("dd MMM yyyy") ?? "—")</td>
+                            <td class="pe-4"><a class="btn btn-sm btn-primary" asp-action="Case" asp-route-applicationId="@a.ApplicationId">Open</a></td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-5">Nothing to verify.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

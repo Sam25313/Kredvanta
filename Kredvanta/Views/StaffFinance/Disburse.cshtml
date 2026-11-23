@@ -1,0 +1,98 @@
+@using static Kredvanta.Models.Enums.LendingEnums
+@model Kredvanta.Controllers.StaffFinanceController.DisbursePage
+@{
+	ViewData["Title"] = "Record disbursement";
+	Layout = "_StaffLayout";
+	var offer = Model.Offer!;
+	var netProceeds = offer.Principal - offer.ProcessingFee;
+}
+
+<div class="container-fluid py-3">
+	<div class="mb-4">
+		<a asp-action="Index" class="small text-decoration-none text-muted"><i class="bi bi-arrow-left me-1"></i>Back to disbursements</a>
+		<h1 class="h2 fw-bold mt-2 mb-1">Record loan disbursement</h1>
+		<p class="text-muted mb-0">Application @Model.Number <span class="mx-1">&middot;</span> @Model.Borrower</p>
+	</div>
+
+	<div class="alert alert-warning border-0 shadow-sm" role="note">
+		Record this only after you have confirmed the payout was sent. The amount must match the signed offer's net proceeds.
+	</div>
+
+	<div class="row g-4">
+		<div class="col-xl-5">
+			<div class="card border-0 shadow-sm rounded-4">
+				<div class="card-header bg-white p-4">
+					<h2 class="h5 fw-bold mb-1">Signed offer</h2>
+					<p class="text-muted small mb-0">@offer.ProductNameSnapshot · @offer.CurrencyCode</p>
+				</div>
+				<div class="card-body p-4">
+					<dl class="row mb-0">
+						<dt class="col-7 text-muted">Approved principal</dt>
+						<dd class="col-5 text-end">@offer.CurrencyCode @offer.Principal.ToString("N2")</dd>
+						<dt class="col-7 text-muted">Processing fee</dt>
+						<dd class="col-5 text-end">@offer.CurrencyCode @offer.ProcessingFee.ToString("N2")</dd>
+						<dt class="col-7 fw-bold">Net proceeds to borrower</dt>
+						<dd class="col-5 text-end fw-bold text-success">@offer.CurrencyCode @netProceeds.ToString("N2")</dd>
+						<dt class="col-7 text-muted">Total repayable</dt>
+						<dd class="col-5 text-end">@offer.CurrencyCode @offer.TotalRepayable.ToString("N2")</dd>
+						<dt class="col-7 text-muted">Repayment plan</dt>
+						<dd class="col-5 text-end">@offer.TermPeriods @offer.RepaymentFrequency</dd>
+						<dt class="col-7 text-muted">Borrower phone</dt>
+						<dd class="col-5 text-end">@Model.Phone</dd>
+					</dl>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-xl-7">
+			<div class="card border-0 shadow-sm rounded-4">
+				<div class="card-header bg-white p-4">
+					<h2 class="h5 fw-bold mb-1">Payout details</h2>
+					<p class="text-muted small mb-0">Enter the transaction details from the payment provider or cash record.</p>
+				</div>
+				<div class="card-body p-4">
+					<form method="post" asp-action="Disburse" asp-route-id="@Model.Id">
+						<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+						<input asp-for="IdempotencyKey" type="hidden" />
+
+						<div class="mb-3">
+							<label asp-for="Method" class="form-label fw-semibold">Payment method</label>
+							<select asp-for="Method" asp-items="Html.GetEnumSelectList<DisbursementMethod>()" class="form-select"></select>
+							<span asp-validation-for="Method" class="text-danger small"></span>
+						</div>
+
+						<div class="mb-3">
+							<label asp-for="AmountPaid" class="form-label fw-semibold">Amount sent (@offer.CurrencyCode)</label>
+							<input asp-for="AmountPaid" class="form-control" type="number" step="0.01" min="0.01" />
+							<span asp-validation-for="AmountPaid" class="text-danger small"></span>
+							<div class="form-text">Must be exactly @offer.CurrencyCode @netProceeds.ToString("N2").</div>
+						</div>
+
+						<div class="mb-3">
+							<label asp-for="RecipientAccount" class="form-label fw-semibold">Recipient account or destination</label>
+							<input asp-for="RecipientAccount" class="form-control" autocomplete="off" placeholder="Mobile number, bank account, or cash receipt details" />
+							<span asp-validation-for="RecipientAccount" class="text-danger small"></span>
+						</div>
+
+						<div class="mb-4">
+							<label asp-for="Reference" class="form-label fw-semibold">Transaction reference</label>
+							<input asp-for="Reference" class="form-control" autocomplete="off" placeholder="Required except for cash" />
+							<span asp-validation-for="Reference" class="text-danger small"></span>
+							<div class="form-text">Do not reuse a reference already recorded for another payout.</div>
+						</div>
+
+						<div class="form-check mb-4">
+							<input class="form-check-input" type="checkbox" name="confirm" value="true" id="confirmPayout" required />
+							<label class="form-check-label" for="confirmPayout">I verified the recipient and confirm these funds have been sent.</label>
+						</div>
+
+						<div class="d-flex flex-wrap gap-2">
+							<button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-2"></i>Record payout and create loan</button>
+							<a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

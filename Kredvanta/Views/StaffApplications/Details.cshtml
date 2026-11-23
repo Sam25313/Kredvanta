@@ -1,0 +1,205 @@
+﻿@using static Kredvanta.Models.Enums.LendingEnums
+@using Kredvanta.Authorization
+@using Kredvanta.Services.Documents
+@model Kredvanta.ViewModels.Staff.StaffApplicationDetails
+
+@{
+    ViewData["Title"] = "Review " + Model.ApplicationNumber;
+    var canDecline = User.IsInRole(AppRoles.CreditManager) && Model.Status == LoanApplicationStatus.UnderReview;
+   // Layout = User.IsInRole("Administrator") ? "_AdminLayout" : "_Layout";
+}
+@{
+    Layout = "_StaffLayout";
+}
+
+<div class="d-flex gap-2">
+@if (User.IsInRole("Administrator") || User.IsInRole("CreditAnalyst") || User.IsInRole("CreditManager"))
+{
+    <a class="btn btn-outline-primary"
+       asp-controller="StaffAppraisal" asp-action="Index"
+       asp-route-applicationId="@Model.Id">
+        <i class="bi bi-calculator me-1"></i> Appraisal
+    </a>
+}
+@if (User.IsInRole("KYCOfficer") || User.IsInRole("VerificationOfficer")
+         || User.IsInRole("LoanOfficer") || User.IsInRole("CreditAnalyst"))
+    {
+        <a class="btn btn-outline-primary"
+           asp-controller="StaffVerification" asp-action="Case"
+           asp-route-applicationId="@Model.Id">
+            <i class="bi bi-patch-check me-1"></i> Verification
+        </a>
+    }
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Queue
+    </a>
+</div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Request</h5>
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">Product</dt>
+                        <dd class="col-7">@Model.ProductName</dd>
+                        <dt class="col-5 text-muted">Amount</dt>
+                        <dd class="col-7">KES @Model.RequestedAmount.ToString("N2")</dd>
+                        <dt class="col-5 text-muted">Term</dt>
+                        <dd class="col-7">@Model.RequestedTermPeriods periods</dd>
+                        <dt class="col-5 text-muted">Submitted</dt>
+                        <dd class="col-7">@(Model.SubmittedAt?.ToLocalTime().ToString("dd MMM yyyy") ?? "—")</dd>
+                        <dt class="col-5 text-muted">Purpose</dt>
+                        <dd class="col-7">@Model.LoanPurpose</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-1">Applicant (declared, not yet verified)</h5>
+                    <p class="text-muted small">@Model.BorrowerName, @Model.BorrowerNumber, KYC: @Model.KycStatus</p>
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">Employment</dt>
+                        <dd class="col-7">@Model.EmploymentStatus</dd>
+                        <dt class="col-5 text-muted">Employer</dt>
+                        <dd class="col-7">@Model.Employer</dd>
+                        <dt class="col-5 text-muted">Contract</dt>
+                        <dd class="col-7">@Model.ContractType</dd>
+                        <dt class="col-5 text-muted">Contract end</dt>
+                        <dd class="col-7">@(Model.ContractEndDate?.ToString("dd MMM yyyy") ?? "N/A")</dd>
+                        <dt class="col-5 text-muted">Gross salary</dt>
+                        <dd class="col-7">@(Model.GrossSalary?.ToString("N2") ?? "—")</dd>
+                        <dt class="col-5 text-muted">Net salary</dt>
+                        <dd class="col-7">@(Model.NetSalary?.ToString("N2") ?? "—")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow actions -->
+    @if (Model.CanStartReview || Model.CanRequestDocuments || Model.CanResumeReview || canDecline)
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body d-flex flex-wrap gap-3 align-items-start">
+                @if (Model.CanStartReview)
+                {
+                    <form asp-action="StartReview" asp-route-id="@Model.Id" method="post">
+                        <button class="btn btn-primary">Start review</button>
+                    </form>
+                }
+                @if (Model.CanResumeReview)
+                {
+                    <form asp-action="ResumeReview" asp-route-id="@Model.Id" method="post">
+                        <button class="btn btn-primary">Resume review</button>
+                    </form>
+                }
+                @if (Model.CanRequestDocuments)
+                {
+                    <form asp-action="RequestDocuments" asp-route-id="@Model.Id" method="post" class="d-flex gap-2">
+                        <input name="notes" class="form-control" placeholder="What does the applicant need to provide?" required />
+                        <button class="btn btn-warning text-nowrap">Request documents</button>
+                    </form>
+                }
+                @if (canDecline)
+                {
+                    <form asp-action="Decline" asp-route-id="@Model.Id" method="post" class="d-flex flex-column flex-sm-row gap-2">
+                        <input name="reason" class="form-control" maxlength="2000" placeholder="Reason for declining" required />
+                        <button class="btn btn-danger text-nowrap">Decline application</button>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Documents -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3"><h5 class="fw-bold mb-0">Documents</h5></div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th class="ps-4">Requirement</th><th>File</th><th>Status</th><th>Review</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model.Documents)
+                    {
+                        <tr class="@(d.IsCurrent ? "" : "text-muted")">
+                            <td class="ps-4">
+                                @d.RequirementName
+                                <div class="small text-muted">v@d.Version @(d.IsCurrent ? "" : "(replaced)")</div>
+                            </td>
+                            <td>
+                                <a asp-controller="ApplicationDocuments" asp-action="Download"
+                                   asp-route-applicationId="@Model.Id" asp-route-documentId="@d.Id">@d.FileName</a>
+                                <div class="small text-muted text-break" title="SHA-256">@d.Sha256Hash</div>
+                                <div class="small text-muted">@d.UploadedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">@d.ReviewStatus</span>
+                                @if (!string.IsNullOrEmpty(d.RejectionReasonCode))
+                                {
+                                    <div class="small">@DocumentRejectionReasons.Label(d.RejectionReasonCode)</div>
+                                }
+                                @if (!string.IsNullOrEmpty(d.ReviewComments))
+                                {
+                                    <div class="small text-muted">@d.ReviewComments</div>
+                                }
+                            </td>
+                            <td>
+                                @if (Model.CanReviewDocuments && d.IsCurrent && !d.UploadedByCurrentUser)
+                                {
+                                    <form asp-controller="ApplicationDocuments" asp-action="Review"
+                                          asp-route-applicationId="@Model.Id" asp-route-documentId="@d.Id" method="post"
+                                          class="d-flex flex-column gap-1">
+                                        <select name="outcome" class="form-select form-select-sm" required>
+                                            <option value="@((int)DocumentReviewStatus.Verified)">Accept</option>
+                                            <option value="@((int)DocumentReviewStatus.Rejected)">Reject</option>
+                                            <option value="@((int)DocumentReviewStatus.ClarificationRequired)">Ask for clarification</option>
+                                        </select>
+                                        <select name="reasonCode" class="form-select form-select-sm">
+                                            <option value="">Reason (required when rejecting)</option>
+                                            @foreach (var code in DocumentRejectionReasons.All)
+                                            {
+                                                <option value="@code">@DocumentRejectionReasons.Label(code)</option>
+                                            }
+                                        </select>
+                                        <input name="comments" class="form-control form-control-sm"
+                                               placeholder="Comment (shown to applicant for clarification)" />
+                                        <button class="btn btn-sm btn-primary">Save review</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Documents.Any())
+                    {
+                        <tr><td colspan="4" class="text-center text-muted py-4">No documents uploaded.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- History -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3"><h5 class="fw-bold mb-0">History</h5></div>
+        <ul class="list-group list-group-flush">
+            @foreach (var h in Model.History)
+            {
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between flex-wrap">
+                        <span class="fw-semibold">@(h.From?.ToString() ?? "New") → @h.To</span>
+                        <small class="text-muted">@h.At.ToLocalTime().ToString("dd MMM yyyy HH:mm"), @h.By</small>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(h.Notes))
+                    {
+                        <div class="small text-muted">@h.Notes</div>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+</div>

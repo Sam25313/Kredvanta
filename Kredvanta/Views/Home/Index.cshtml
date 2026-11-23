@@ -9,10 +9,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Kredvanta | Financial Support Made Simple</title>
+    <title>Kings Microfinance | Financial Support Made Simple</title>
 
     <meta name="description"
-          content="Kredvanta makes accessing financial support simpler. Create an account, explore loan products and apply online." />
+          content="Kings Microfinance makes accessing financial support simpler. Create an account, explore loan products and apply online." />
 
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -31,11 +31,11 @@
 
     <style>
             :root {
-                --navy: #101D36;
-                --navy-light: #1C2D4A;
-                --orange: #F58220;
-                --orange-dark: #DF7014;
-                --light: #F6F8FC;
+                --navy: #123B2A;
+                --navy-light: #1D5138;
+                --orange: #22C55E;
+                --orange-dark: #16A34A;
+                --light: #F3F8F4;
                 --text: #344054;
                 --muted: #667085;
                 --white: #FFFFFF;
@@ -69,20 +69,27 @@
             }
 
             .navbar-brand {
-                font-size: 25px;
-                font-weight: 800;
+                display: inline-flex;
+                align-items: center;
                 color: var(--navy);
-                letter-spacing: -1px;
+            }
+
+            .navbar-brand img {
+                display: block;
+                width: auto;
+                height: 66px;
+                border-radius: 6px;
             }
 
             .navbar-brand span {
                 color: var(--orange);
             }
 
-            .brand-icon {
-                color: var(--orange);
-                font-size: 26px;
-                margin-right: 7px;
+            .footer-brand img {
+                display: block;
+                width: auto;
+                height: 82px;
+                border-radius: 6px;
             }
 
             .navbar .nav-link {
@@ -646,7 +653,7 @@
         <div class="container">
 
             <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                <i class="bi bi-mortarboard-fill brand-icon"></i>Kred<span>vanta</span>
+                <img src="@Url.Content("~/images/kings-microfinance-logo.jpg")" alt="Kings Microfinance home" />
             </a>
 
             <button class="navbar-toggler"
@@ -725,7 +732,7 @@
 
                     <p class="hero-description">
                         Take the next step towards your financial goals with
-                        Kredvanta. Explore loan options, create your account
+                        Kings Microfinance. Explore loan options, create your account
                         and manage your loan application through one convenient
                         digital platform.
                     </p>
@@ -768,7 +775,7 @@
                                 <h4>Your financial goals matter.</h4>
                                 <p>
                                     Explore available loan options and take
-                                    your next step with Kredvanta.
+                                    your next step with Kings Microfinance.
                                 </p>
                             </div>
 
@@ -807,25 +814,35 @@
 
                 <div class="col-lg-6 about-content">
 
-                    <span class="section-label">About Kredvanta</span>
+                    <span class="section-label">About Kings Microfinance</span>
 
                     <h2>
                         A smarter digital approach to borrowing.
                     </h2>
 
                     <p class="mt-3">
-                        Kredvanta is designed to make the loan application
+                        Kings Microfinance is designed to make the loan application
                         experience more convenient, organised and accessible.
                         Our digital platform brings the essential steps of
                         applying for a loan together in one place.
                     </p>
 
                     <div class="about-point">
+                        <i class="bi bi-bullseye"></i>
+                        <div>
+                            <strong>Our Mission</strong>
+                            <p class="mb-0">
+                                To expand access to responsible, inclusive financial services that empower individuals and small businesses to build stability and pursue their goals.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="about-point">
                         <i class="bi bi-person-check-fill"></i>
                         <div>
                             <strong>Create your own account</strong>
                             <p class="mb-0">
-                                Register and establish your borrower profile.
+                                Register and establish your applicant profile.
                             </p>
                         </div>
                     </div>
@@ -883,7 +900,7 @@
 
                 <p class="section-subtitle">
                     Explore the different loan categories available on
-                    Kredvanta. Select an option to create your account
+                    Kings Microfinance. Select an option to create your account
                     and begin the application process.
                 </p>
 
@@ -1051,14 +1068,14 @@
 
             <div class="text-center mb-5">
 
-                <span class="section-label">Why Kredvanta?</span>
+                <span class="section-label">Why Kings Microfinance?</span>
 
                 <h2 class="section-heading">
                     Borrowing Made More Convenient
                 </h2>
 
                 <p class="section-subtitle">
-                    A digital experience designed to help borrowers
+                    A digital experience designed to help applicants
                     manage important steps of their loan journey.
                 </p>
 
@@ -1077,7 +1094,7 @@
                         <h5>Online Access</h5>
 
                         <p>
-                            Access your borrower account and manage
+                            Access your applicant account and manage
                             your application through the digital platform.
                         </p>
 
@@ -1096,7 +1113,7 @@
                         <h5>Personal Profile</h5>
 
                         <p>
-                            Maintain your borrower information and
+                            Maintain your applicant information and
                             supporting details in one place.
                         </p>
 
@@ -1159,7 +1176,7 @@
                 <span class="section-label">Getting Started</span>
 
                 <h2 class="section-heading">
-                    How Kredvanta Works
+                    How Kings Microfinance Works
                 </h2>
 
                 <p class="section-subtitle">
@@ -1181,7 +1198,7 @@
 
                         <p>
                             Register using your personal details
-                            to access your borrower account.
+                            to access your applicant account.
                         </p>
 
                     </div>
@@ -1198,7 +1215,7 @@
 
                         <p>
                             Provide the information required to
-                            establish your borrower profile.
+                            establish your applicant profile.
                         </p>
 
                     </div>
@@ -1273,7 +1290,7 @@
                     </h2>
 
                     <p class="mt-3 mb-4">
-                        Kredvanta brings account registration, borrower
+                        Kings Microfinance brings account registration, applicant
                         profiles, document submission and loan applications
                         together in a convenient digital experience.
                     </p>
@@ -1281,7 +1298,7 @@
                     <div class="trust-item">
                         <i class="bi bi-check-circle-fill"></i>
                         <span>
-                            Convenient access to your borrower account.
+                            Convenient access to your applicant account.
                         </span>
                     </div>
 
@@ -1335,7 +1352,7 @@
             </h2>
 
             <p>
-                Create your Kredvanta account, complete your borrower
+                Create your Kings Microfinance account, complete your applicant
                 profile and discover the loan products available to you.
                 Your journey starts with a simple registration.
             </p>
@@ -1373,8 +1390,7 @@
                     <a asp-controller="Home"
                        asp-action="Index"
                        class="footer-brand">
-                        <i class="bi bi-mortarboard-fill"></i>
-                        Kred<span>vanta</span>
+                        <img src="@Url.Content("~/images/kings-microfinance-logo.jpg")" alt="Kings Microfinance home" />
                     </a>
 
                     <p class="mt-3">
@@ -1437,7 +1453,7 @@
             <div class="footer-bottom text-center">
 
                 <p class="mb-0">
-                    &copy; @DateTime.Now.Year Kredvanta.
+                    &copy; @DateTime.Now.Year Kings Microfinance.
                     All rights reserved.
                 </p>
 

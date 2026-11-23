@@ -3,7 +3,7 @@
 
 @{
     ViewData["Title"] = "Loan Products";
-    Layout = "_Layout";
+    Layout = User.IsInRole("Administrator") ? "_AdminLayout" : "_Layout";
 
     var products = Model.ToList();
 
@@ -11,8 +11,7 @@
 
     bool canManageProducts =
         User.IsInRole("Administrator") ||
-        User.IsInRole("CreditManager") ||
-        User.IsInRole("LoanOfficer");
+        User.IsInRole("CreditManager");
 
     var activeProducts = products.Where(p => p.IsActive).ToList();
     var inactiveProducts = products.Where(p => !p.IsActive).ToList();
@@ -39,6 +38,15 @@
         </div>
     }
 
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     @if (isBorrower)
     {
         <!-- ==========================================
@@ -49,7 +57,7 @@
             <div class="mb-2">
                 <span class="badge bg-primary-subtle text-primary px-3 py-2">
                     <i class="bi bi-wallet2 me-1"></i>
-                    Kredvanta Lending
+                    Kings Microfinance Lending
                 </span>
             </div>
 
@@ -402,15 +410,18 @@
                                         <td>
                                             @if (product.IsActive)
                                             {
-                                                <span class="badge bg-success-subtle text-success">
-                                                    Active
-                                                </span>
+                                                <span class="badge bg-success-subtle text-success">Active</span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-secondary-subtle text-secondary">
-                                                    Inactive
-                                                </span>
+                                                <span class="badge bg-secondary-subtle text-secondary">Inactive</span>
+                                            }
+                                            <span class="badge @(product.IsAvailableForApplication && product.IsActive ? "bg-primary-subtle text-primary" : "bg-warning-subtle text-warning-emphasis")">
+                                                @(product.IsAvailableForApplication && product.IsActive ? "Accepting applications" : "Applications closed")
+                                            </span>
+                                            @if (!product.IsActive && product.ProductCode == Kredvanta.Data.Seed.LoanProductSeeder.SalariedProductCode)
+                                            {
+                                                <small class="d-block text-muted mt-1">Seeded with placeholder pricing; review and activate before opening.</small>
                                             }
                                         </td>
 
@@ -432,6 +443,31 @@
                                                             <i class="bi bi-eye me-2"></i>
                                                             View Details
                                                         </a>
+                                                    </li>
+
+                                                    <li>
+                                                        @if (product.IsActive)
+                                                        {
+                                                            <form asp-action="ToggleApplicationAvailability"
+                                                                  asp-route-id="@product.Id" method="post"
+                                                                  onsubmit="return confirm('@(product.IsAvailableForApplication ? "Close" : "Open") applications for this product?');">
+                                                                @Html.AntiForgeryToken()
+                                                                <button type="submit" class="dropdown-item">
+                                                                    <i class="bi @(product.IsAvailableForApplication ? "bi-pause-circle" : "bi-play-circle") me-2"></i>
+                                                                    @(product.IsAvailableForApplication ? "Close applications" : "Open applications")
+                                                                </button>
+                                                            </form>
+                                                        }
+                                                        else
+                                                        {
+                                                            <form asp-action="Activate" asp-route-id="@product.Id" method="post"
+                                                                  onsubmit="return confirm('Activate this loan product? Applications will remain closed.');">
+                                                                @Html.AntiForgeryToken()
+                                                                <button type="submit" class="dropdown-item text-success">
+                                                                    <i class="bi bi-play-circle me-2"></i>Activate product
+                                                                </button>
+                                                            </form>
+                                                        }
                                                     </li>
 
                                                     <li>

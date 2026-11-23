@@ -4,6 +4,7 @@ using Kredvanta.Models.Enums;
 using Kredvanta.Models.Identity;
 using Kredvanta.Models.Loans;
 using static Kredvanta.Models.Enums.LendingEnums;
+using System.ComponentModel.DataAnnotations;
 
 namespace Kredvanta.Models.Repayments
 {
@@ -36,8 +37,17 @@ namespace Kredvanta.Models.Repayments
         public DateTime ReceivedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime? ConfirmedAt { get; set; }
+        public string? ReversalReason { get; set; }
+        public DateTime? ReversedAt { get; set; }
+        public string? ReversedByUserId { get; set; }
+       
+       
+        
+        
 
         public string? Notes { get; set; }
+        [Timestamp]
+        public byte[] RowVersion { get; set; } = null!;
 
         public ICollection<RepaymentAllocation> Allocations { get; set; }
             = new List<RepaymentAllocation>();

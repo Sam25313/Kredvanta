@@ -24,8 +24,8 @@
 
     .onboarding-tag {
         display: inline-block;
-        background: #CCFBF1;
-        color: #0F766E;
+        background: #DCFCE7;
+        color: #166534;
         padding: 7px 13px;
         border-radius: 30px;
         font-size: 11px;
@@ -55,7 +55,7 @@
     }
 
     .onboarding-card-header {
-        background: #0F172A;
+        background: linear-gradient(120deg, #14532d, #166534);
         color: #FFFFFF;
         padding: 24px 30px;
     }
@@ -83,8 +83,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #CCFBF1;
-        color: #0F766E;
+        background: #DCFCE7;
+        color: #166534;
         font-size: 19px;
     }
 
@@ -120,8 +120,8 @@
 
         .form-control:focus,
         .form-select:focus {
-            border-color: #0D9488;
-            box-shadow: 0 0 0 3px rgba(13,148,136,.12);
+            border-color: #166534;
+            box-shadow: 0 0 0 3px rgba(22,101,52,.12);
         }
 
     .field-validation-error {
@@ -156,18 +156,18 @@
         gap: 12px;
         padding: 16px;
         border-radius: 10px;
-        background: #F0FDFA;
-        border: 1px solid #99F6E4;
+        background: #F0FDF4;
+        border: 1px solid #BBF7D0;
         margin-top: 25px;
     }
 
         .information-notice i {
-            color: #0F766E;
+            color: #166534;
             font-size: 19px;
         }
 
         .information-notice strong {
-            color: #134E4A;
+            color: #14532D;
             font-size: 13px;
         }
 
@@ -179,8 +179,8 @@
         }
 
     .btn-continue {
-        background: #0F766E;
-        border: 1px solid #0F766E;
+        background: #166534;
+        border: 1px solid #166534;
         color: #FFFFFF;
         border-radius: 9px;
         padding: 12px 23px;
@@ -189,8 +189,8 @@
     }
 
         .btn-continue:hover {
-            background: #115E59;
-            border-color: #115E59;
+            background: #14532D;
+            border-color: #14532D;
             color: #FFFFFF;
         }
 
@@ -202,7 +202,7 @@
     }
 
         .btn-cancel:hover {
-            color: #0F766E;
+            color: #166534;
         }
 
     @@media (max-width: 768px) {
@@ -230,7 +230,7 @@
         <div class="onboarding-heading">
             <span class="onboarding-tag">
                 <i class="bi bi-person-check me-1"></i>
-                BORROWER ONBOARDING
+                APPLICANT ONBOARDING
             </span>
 
             <h2>Let's get to know you</h2>
@@ -252,7 +252,7 @@
                 </h5>
 
                 <p>
-                    Provide your legal names, date of birth and identification details.
+                    Your legal name comes from your account. Enter your date of birth and identification details.
                 </p>
             </div>
 
@@ -273,7 +273,7 @@
 
                         <div class="section-heading">
                             <h6>Personal Information</h6>
-                            <p>Enter your names as they appear on your identification document.</p>
+                            <p>Your name is saved from account registration. <a asp-area="Identity" asp-page="/Account/Manage/Index">Update it in your account settings</a> if needed.</p>
                         </div>
                     </div>
 
@@ -281,10 +281,11 @@
 
                         <div class="col-md-4">
                             <label asp-for="FirstName" class="form-label"></label>
-                            <input asp-for="FirstName"
+                            <input id="FirstName"
+                                   value="@Model.FirstName"
                                    class="form-control"
                                    autocomplete="given-name"
-                                   placeholder="Enter first name" />
+                                   readonly />
                             <span asp-validation-for="FirstName"></span>
                         </div>
 
@@ -299,10 +300,11 @@
 
                         <div class="col-md-4">
                             <label asp-for="LastName" class="form-label"></label>
-                            <input asp-for="LastName"
+                            <input id="LastName"
+                                   value="@Model.LastName"
                                    class="form-control"
                                    autocomplete="family-name"
-                                   placeholder="Enter last name" />
+                                   readonly />
                             <span asp-validation-for="LastName"></span>
                         </div>
 
@@ -377,7 +379,7 @@
                         <div>
                             <strong>Your information is protected</strong>
                             <p>
-                                Your identification details will be used for borrower
+                                Your identification details will be used for applicant
                                 registration and identity verification. Completing this
                                 step does not mean your identity has already been verified.
                             </p>

@@ -1,8 +1,9 @@
 ﻿@model Kredvanta.ViewModels.LoanProducts.LoanProductFormViewModel
 
 @{
-    ViewData["Title"] = "Create Loan Product";
-    Layout = "_Layout";
+    var isEdit = (bool?)ViewBag.IsEdit ?? false;
+    ViewData["Title"] = isEdit ? "Edit Loan Product" : "Create Loan Product";
+    Layout = User.IsInRole("Administrator") ? "_AdminLayout" : "_Layout";
 }
 
 <div class="container-fluid py-4">
@@ -10,9 +11,9 @@
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold mb-1">Create Loan Product</h2>
+            <h2 class="fw-bold mb-1">@(isEdit ? "Edit Loan Product" : "Create Loan Product")</h2>
             <p class="text-muted mb-0">
-                Configure a new lending product for Kredvanta borrowers.
+                Configure the lending product terms and availability for Kings Microfinance applicants.
             </p>
         </div>
 
@@ -22,7 +23,7 @@
         </a>
     </div>
 
-    <form asp-action="Create" method="post">
+    <form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@ViewBag.ProductId" method="post">
 
         @Html.AntiForgeryToken()
 
@@ -50,11 +51,15 @@
 
                             <div class="col-md-6">
                                 <label asp-for="ProductCode" class="form-label fw-semibold"></label>
-                                <input asp-for="ProductCode"
-                                       class="form-control"
-                                       placeholder="e.g. PERSONAL-001" />
-                                <span asp-validation-for="ProductCode"
-                                      class="text-danger small"></span>
+                                @if (isEdit)
+                                {
+                                    <input asp-for="ProductCode" class="form-control" readonly />
+                                }
+                                else
+                                {
+                                    <input asp-for="ProductCode" class="form-control" placeholder="e.g. PERSONAL-001" />
+                                }
+                                <span asp-validation-for="ProductCode" class="text-danger small"></span>
                             </div>
 
                             <div class="col-md-6">
@@ -64,6 +69,12 @@
                                        placeholder="e.g. Personal Loan" />
                                 <span asp-validation-for="ProductName"
                                       class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Category" class="form-label fw-semibold"></label>
+                                <input asp-for="Category" class="form-control" placeholder="e.g. Personal" />
+                                <span asp-validation-for="Category" class="text-danger small"></span>
                             </div>
 
                             <div class="col-12">
@@ -265,19 +276,19 @@
 
                     <div class="card-body">
 
-                        <div class="form-check form-switch">
-                            <input asp-for="IsActive"
-                                   class="form-check-input"
-                                   role="switch" />
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="IsActive" class="form-check-input" role="switch" />
+                            <label asp-for="IsActive" class="form-check-label fw-semibold"></label>
+                        </div>
 
-                            <label asp-for="IsActive"
-                                   class="form-check-label fw-semibold">
-                            </label>
+                        <div class="form-check form-switch">
+                            <input asp-for="IsAvailableForApplication" class="form-check-input" role="switch" />
+                            <label asp-for="IsAvailableForApplication" class="form-check-label fw-semibold"></label>
                         </div>
 
                         <p class="text-muted small mt-2">
-                            Active products are visible to eligible borrowers
-                            on the Available Loans page.
+                            Applicants can apply only when the product is active and this setting is enabled.
+                            Standard document requirements are added automatically and can be tailored after saving.
                         </p>
 
                     </div>
@@ -317,7 +328,7 @@
 
                     <button type="submit" class="btn btn-primary btn-lg">
                         <i class="bi bi-check-circle me-2"></i>
-                        Save Loan Product
+                        @(isEdit ? "Save Changes" : "Create Loan Product")
                     </button>
 
                     <a asp-action="Index"

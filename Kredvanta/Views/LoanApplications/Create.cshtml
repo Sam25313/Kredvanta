@@ -10,7 +10,7 @@
     <!-- Page heading -->
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div>
-            <span class="text-primary small fw-semibold">KREDVANTA / LOAN APPLICATIONS</span>
+            <span class="text-primary small fw-semibold">KINGS MICROFINANCE / LOAN APPLICATIONS</span>
             <h2 class="fw-bold mb-1 mt-1">New Loan Application</h2>
             <p class="text-muted mb-0">
                 Complete the information below to request financing.
@@ -340,7 +340,7 @@
 
                     <p class="text-muted small mb-0">
                         Your application is associated with your authenticated
-                        borrower account. Application information and documents
+                        applicant account. Application information and documents
                         are handled through the authorised lending workflow.
                     </p>
                 </div>
@@ -356,20 +356,27 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
 
-            const productSelect = document.getElementById("loanProductSelect");
-            const productInformation = document.getElementById("productInformation");
+            var productSelect = document.getElementById("loanProductSelect") as HTMLSelectElement | null;
+            var productInformation = document.getElementById("productInformation");
+            var requestedAmount = document.getElementById("requestedAmount") as HTMLInputElement | null;
+            var requestedTerm = document.getElementById("requestedTerm") as HTMLInputElement | null;
+            var amountHelp = document.getElementById("amountHelp");
+            var termHelp = document.getElementById("termHelp");
+            var termUnit = document.getElementById("termUnit");
+            var loanPurpose = document.getElementById("loanPurpose") as HTMLTextAreaElement | null;
+            var purposeCount = document.getElementById("purposeCount");
 
-            const requestedAmount = document.getElementById("requestedAmount");
-            const requestedTerm = document.getElementById("requestedTerm");
+            if (!productSelect || !productInformation || !requestedAmount || !requestedTerm ||
+                !amountHelp || !termHelp || !termUnit || !loanPurpose || !purposeCount) {
+                return;
+            }
 
-            const amountHelp = document.getElementById("amountHelp");
-            const termHelp = document.getElementById("termHelp");
-            const termUnit = document.getElementById("termUnit");
+            function setText(id: string, text: string) {
+                var el = document.getElementById(id);
+                if (el) el.textContent = text;
+            }
 
-            const loanPurpose = document.getElementById("loanPurpose");
-            const purposeCount = document.getElementById("purposeCount");
-
-            function formatCurrency(value) {
+            function formatCurrency(value: number) {
                 return "KES " + Number(value).toLocaleString("en-KE", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
@@ -377,108 +384,73 @@
             }
 
             function updatePurposeCount() {
-                purposeCount.textContent = loanPurpose.value.length;
+                purposeCount.textContent = String(loanPurpose.value.length);
             }
 
             function updateProductInformation() {
-
-                const selectedOption =
-                    productSelect.options[productSelect.selectedIndex];
+                var selectedOption = productSelect.options[productSelect.selectedIndex];
 
                 if (!selectedOption || !selectedOption.value) {
-
                     productInformation.classList.add("d-none");
 
                     requestedAmount.min = "1";
                     requestedAmount.removeAttribute("max");
-
                     requestedTerm.min = "1";
                     requestedTerm.max = "120";
 
-                    amountHelp.textContent =
-                        "Select a loan product to view its amount limits.";
-
-                    termHelp.textContent =
-                        "Select a loan product to view its repayment terms.";
-
+                    amountHelp.textContent = "Select a loan product to view its amount limits.";
+                    termHelp.textContent = "Select a loan product to view its repayment terms.";
                     termUnit.textContent = "Periods";
-
                     return;
                 }
 
-                const minAmount = Number(selectedOption.dataset.min);
-                const maxAmount = Number(selectedOption.dataset.max);
-                const minTerm = Number(selectedOption.dataset.minTerm);
-                const maxTerm = Number(selectedOption.dataset.maxTerm);
-
-                const frequency = selectedOption.dataset.frequency;
+                var minAmount = Number(selectedOption.dataset.min);
+                var maxAmount = Number(selectedOption.dataset.max);
+                var minTerm = Number(selectedOption.dataset.minTerm);
+                var maxTerm = Number(selectedOption.dataset.maxTerm);
+                var frequency = selectedOption.dataset.frequency || "";
 
                 productInformation.classList.remove("d-none");
 
-                document.getElementById("productDescription").textContent =
-                    selectedOption.dataset.description ||
-                    "No product description is available.";
+                setText("productDescription",
+                    selectedOption.dataset.description || "No product description is available.");
+                setText("minimumAmount", formatCurrency(minAmount));
+                setText("maximumAmount", formatCurrency(maxAmount));
+                setText("interestRate", (selectedOption.dataset.rate || "0") + "%");
+                setText("interestMethod", selectedOption.dataset.interest || "");
+                setText("repaymentFrequency", frequency);
+                setText("termRange", minTerm + " - " + maxTerm + " " + frequency);
 
-                document.getElementById("minimumAmount").textContent =
-                    formatCurrency(minAmount);
-
-                document.getElementById("maximumAmount").textContent =
-                    formatCurrency(maxAmount);
-
-                document.getElementById("interestRate").textContent =
-                    selectedOption.dataset.rate + "%";
-
-                document.getElementById("interestMethod").textContent =
-                    selectedOption.dataset.interest;
-
-                document.getElementById("repaymentFrequency").textContent =
-                    frequency;
-
-                document.getElementById("termRange").textContent =
-                    minTerm + " - " + maxTerm + " " + frequency;
-
-                // Apply the selected product's limits to the form.
-                requestedAmount.min = minAmount;
-                requestedAmount.max = maxAmount;
-
-                requestedTerm.min = minTerm;
-                requestedTerm.max = maxTerm;
-
+                requestedAmount.min = String(minAmount);
+                requestedAmount.max = String(maxAmount);
+                requestedTerm.min = String(minTerm);
+                requestedTerm.max = String(maxTerm);
                 termUnit.textContent = frequency;
 
                 // Clear values that are invalid for the newly selected product.
-                const currentAmount = Number(requestedAmount.value);
-
-                if (requestedAmount.value &&
-                    (currentAmount < minAmount || currentAmount > maxAmount)) {
+                var currentAmount = Number(requestedAmount.value);
+                if (requestedAmount.value && (currentAmount < minAmount || currentAmount > maxAmount)) {
                     requestedAmount.value = "";
                 }
 
-                const currentTerm = Number(requestedTerm.value);
-
-                if (requestedTerm.value &&
-                    (currentTerm < minTerm || currentTerm > maxTerm)) {
+                var currentTerm = Number(requestedTerm.value);
+                if (requestedTerm.value && (currentTerm < minTerm || currentTerm > maxTerm)) {
                     requestedTerm.value = "";
                 }
 
                 amountHelp.textContent =
-                    "Allowed amount: " + formatCurrency(minAmount) +
-                    " to " + formatCurrency(maxAmount) + ".";
-
+                    "Allowed amount: " + formatCurrency(minAmount) + " to " + formatCurrency(maxAmount) + ".";
                 termHelp.textContent =
-                    "Allowed repayment term: " + minTerm +
-                    " to " + maxTerm + " " + frequency + ".";
-
+                    "Allowed repayment term: " + minTerm + " to " + maxTerm + " " + frequency + ".";
             }
 
             productSelect.addEventListener("change", updateProductInformation);
-
             loanPurpose.addEventListener("input", updatePurposeCount);
 
-            // Restore information for a preselected product or validation response.
+            // Restore state for a preselected product or a validation response.
             updateProductInformation();
             updatePurposeCount();
-
         });
     </script>
 }
+

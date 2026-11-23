@@ -1,0 +1,177 @@
+﻿@using Kredvanta.Authorization
+@using Kredvanta.Models.Identity
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> Users
+@{
+    var user = await Users.GetUserAsync(User);
+    var displayName = user is null ? "" : $"{user.FirstName} {user.LastName}".Trim();
+    var roleText = StaffRoleLabels.Describe(User);
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+
+    bool In(params string[] roles) => roles.Any(User.IsInRole);
+    string Active(params string[] controllers) => controllers.Contains(controller) ? "active" : "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Kings Microfinance Staff</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>
+        body {
+            background: #f5f7fb;
+        }
+
+        .staff-sidebar {
+            width: 240px;
+            min-height: 100vh;
+            background: #10243a;
+        }
+
+            .staff-sidebar .nav-link {
+                color: #cbd5e1;
+                border-radius: 8px;
+                font-size: 14px;
+                padding: 9px 12px;
+            }
+
+                .staff-sidebar .nav-link:hover {
+                    background: rgba(255,255,255,.08);
+                    color: #fff;
+                }
+
+                .staff-sidebar .nav-link.active {
+                    background: #0f766e;
+                    color: #fff;
+                }
+
+        .staff-brand {
+            color: #fff;
+            font-weight: 750;
+        }
+
+        .staff-who {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        @@media (max-width: 767px) {
+            .staff-sidebar {
+                width: 100%;
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="d-md-flex">
+        <nav class="staff-sidebar p-3">
+            <div class="staff-brand mb-1">Kings Microfinance</div>
+            <div class="staff-who mb-4">
+                Signed in as <strong class="text-white">@displayName</strong><br />@roleText
+            </div>
+
+            <ul class="nav flex-column gap-1">
+                <li>
+                    <a class="nav-link @Active("StaffHome")" asp-controller="StaffHome" asp-action="Index">
+                        <i class="bi bi-house me-2"></i>My work
+                    </a>
+                </li>
+
+                @if (In(AppRoles.LoanOfficer, AppRoles.KycOfficer, AppRoles.VerificationOfficer,
+                        AppRoles.CreditAnalyst, AppRoles.CreditManager, AppRoles.FinanceOfficer, AppRoles.Auditor))
+                {
+                    <li>
+                        <a class="nav-link @Active("StaffApplications")" asp-controller="StaffApplications" asp-action="Index">
+                            <i class="bi bi-folder2-open me-2"></i>Applications
+                        </a>
+                    </li>
+                }
+
+                @if (In(AppRoles.KycOfficer, AppRoles.VerificationOfficer, AppRoles.LoanOfficer, AppRoles.CreditAnalyst))
+                {
+                    <li>
+                        <a class="nav-link @Active("StaffVerification")" asp-controller="StaffVerification" asp-action="Index">
+                            <i class="bi bi-patch-check me-2"></i>Verification
+                        </a>
+                    </li>
+                }
+
+                @if (In(AppRoles.CreditAnalyst))
+                {
+                    <li>
+                        <a class="nav-link" asp-controller="StaffApplications" asp-action="Index"
+                           asp-route-status="UnderReview">
+                            <i class="bi bi-calculator me-2"></i>Ready to assess
+                        </a>
+                    </li>
+                }
+
+                @if (In(AppRoles.LoanOfficer))
+                {
+                    <li>
+                        <a class="nav-link @Active("StaffOffers")" asp-controller="StaffOffers" asp-action="Index">
+                            <i class="bi bi-receipt me-2"></i>Offers
+                        </a>
+                    </li>
+                }
+
+                @if (In(AppRoles.FinanceOfficer))
+                {
+                    <li>
+                        <a class="nav-link @Active("StaffFinance")" asp-controller="StaffFinance" asp-action="Index">
+                            <i class="bi bi-cash-stack me-2"></i>Disbursements
+                        </a>
+                    </li>
+                }
+
+                @if (In(AppRoles.CreditManager))
+                {
+                    <li>
+                        <a class="nav-link @Active("StaffDecisions")" asp-controller="StaffDecisions" asp-action="Index">
+                            <i class="bi bi-check2-square me-2"></i>Decisions
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link @Active("CreditPolicyManagement")" asp-controller="CreditPolicyManagement" asp-action="Index">
+                            <i class="bi bi-sliders me-2"></i>Credit policy settings
+                        </a>
+                    </li>
+                }
+
+                @if (In(AppRoles.Auditor))
+                {
+                    <li>
+                        <a class="nav-link @Active("AuditLog")" asp-controller="AuditLog" asp-action="Index">
+                            <i class="bi bi-journal-text me-2"></i>Audit log
+                        </a>
+                    </li>
+                }
+
+                <li>
+                    <a class="nav-link @Active("CreditPolicy")" asp-controller="CreditPolicy" asp-action="Index">
+                        <i class="bi bi-file-earmark-text me-2"></i>Applicant policy
+                    </a>
+                </li>
+            </ul>
+
+            <hr class="border-secondary" />
+
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                <button class="btn btn-sm btn-outline-light w-100">Sign out</button>
+            </form>
+        </nav>
+
+        <main class="flex-grow-1 p-3 p-md-4">
+            <partial name="_Alerts" />
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

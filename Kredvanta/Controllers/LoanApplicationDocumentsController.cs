@@ -1,9 +1,10 @@
 ﻿
 using Kredvanta.Data;
-using Kredvanta.Models.Applications;
 using Kredvanta.Models.Borrowers;
 using Kredvanta.Models.Identity;
+using Kredvanta.Services.Documents;
 using Kredvanta.ViewModels.LoanApplications;
+
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -19,27 +20,24 @@ namespace Kredvanta.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IWebHostEnvironment _environment;
-        private readonly IConfiguration _configuration;
+        private readonly IDocumentService _documents;
 
-        private const long MaximumFileSize = 10 * 1024 * 1024;
+        private const long MaximumFileSize = 5 * 1024 * 1024;
 
         public LoanApplicationDocumentsController(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
-            IWebHostEnvironment environment,
-            IConfiguration configuration)
+            IDocumentService documents)
         {
             _context = context;
             _userManager = userManager;
-            _environment = environment;
-            _configuration = configuration;
+            _documents = documents;
         }
 
-        // ============================================================
+     
         // GET: /LoanApplicationDocuments/Upload?applicationId={id}
         // Display the loan application document upload form.
-        // ============================================================
+       
 
         [HttpGet]
         public async Task<IActionResult> Upload(Guid applicationId)
@@ -83,19 +81,19 @@ namespace Kredvanta.Controllers
             return View(model);
         }
 
-        // ============================================================
+        
         // POST: /LoanApplicationDocuments/Upload
         // Validate and upload a loan application document.
-        // ============================================================
+        
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(
             UploadLoanApplicationDocumentViewModel model)
         {
-            // --------------------------------------------------------
+            
             // 1. Identify the current borrower.
-            // --------------------------------------------------------
+           
 
             var borrower = await GetCurrentBorrowerAsync();
 
@@ -104,9 +102,9 @@ namespace Kredvanta.Controllers
                 return RedirectToAction("Step1", "Profile");
             }
 
-            // --------------------------------------------------------
+            
             // 2. Retrieve the borrower's loan application.
-            // --------------------------------------------------------
+            
 
             var application = await _context.LoanApplications
                 .Include(a => a.LoanProduct)
@@ -119,9 +117,9 @@ namespace Kredvanta.Controllers
                 return NotFound();
             }
 
-            // --------------------------------------------------------
+            
             // 3. Check whether document uploads are permitted.
-            // --------------------------------------------------------
+            
 
             if (!CanUpload(application.Status))
             {
@@ -134,9 +132,9 @@ namespace Kredvanta.Controllers
                     new { id = application.Id });
             }
 
-            // --------------------------------------------------------
-            // 4. Validate the uploaded file.
-            // --------------------------------------------------------
+            
+            // Validate the uploaded file.
+            
 
             if (model.File == null || model.File.Length == 0)
             {
@@ -159,7 +157,7 @@ namespace Kredvanta.Controllers
                 {
                     ModelState.AddModelError(
                         nameof(model.File),
-                        "The maximum permitted file size is 10 MB.");
+                        "The maximum permitted file size is 5 MB.");
                 }
 
                 // Validate original filename.
@@ -201,9 +199,9 @@ namespace Kredvanta.Controllers
                 }
             }
 
-            // --------------------------------------------------------
+             
             // 5. Validate the selected document requirement.
-            // --------------------------------------------------------
+         
 
             var requiredDocument = await _context
                 .LoanProductRequiredDocuments
@@ -220,9 +218,9 @@ namespace Kredvanta.Controllers
                     "Select a valid active document requirement for this loan product.");
             }
 
-            // --------------------------------------------------------
-            // 6. Rebuild the form if validation fails.
-            // --------------------------------------------------------
+            
+            // Rebuild the form if validation fails.
+          
 
             if (!ModelState.IsValid)
             {
@@ -239,9 +237,9 @@ namespace Kredvanta.Controllers
                 return View(invalidModel);
             }
 
-            // --------------------------------------------------------
-            // 7. Identify the authenticated user.
-            // --------------------------------------------------------
+            
+            //Identify the authenticated user.
+            
 
             var userId = _userManager.GetUserId(User);
 
@@ -250,283 +248,102 @@ namespace Kredvanta.Controllers
                 return Challenge();
             }
 
-            // --------------------------------------------------------
-            // 8. Prepare private file storage.
-            // --------------------------------------------------------
+            await using var fileStream = model.File!.OpenReadStream();
+            var uploadResult = await _documents.UploadAsync(
+                application.Id,
+                requiredDocument!.Id,
+                fileStream,
+                originalFileName!,
+                userId);
 
-            // Generate a random filename.
-            // Never use the original filename as the physical filename.
-
-            var storageKey = $"{Guid.NewGuid():N}{extension}";
-
-            var storageDirectory = GetStorageDirectory();
-
-            Directory.CreateDirectory(storageDirectory);
-
-            var physicalPath = Path.Combine(
-                storageDirectory,
-                storageKey);
-
-            // Track the completion-check outcome.
-            bool allMandatoryDocumentsSupplied = false;
-            bool waitingForKycVerification = false;
-
-            // Track whether the database save completed.
-            bool databaseSaved = false;
-
-            try
+            if (!uploadResult.Succeeded)
             {
-                // ----------------------------------------------------
-                // 9. Save the physical file.
-                // ----------------------------------------------------
+                ModelState.AddModelError(
+                    nameof(model.File),
+                    uploadResult.Error ?? "The document could not be uploaded.");
 
-                await using (var fileStream = new FileStream(
-                    physicalPath,
-                    FileMode.CreateNew,
-                    FileAccess.Write,
-                    FileShare.None,
-                    81920,
-                    FileOptions.Asynchronous))
-                {
-                    await model.File!.CopyToAsync(fileStream);
-                }
+                var invalidModel = await BuildUploadViewModelAsync(
+                    application.Id,
+                    application.LoanProductId,
+                    application.ApplicationNumber,
+                    application.LoanProduct.ProductName);
+                invalidModel.LoanProductRequiredDocumentId = model.LoanProductRequiredDocumentId;
 
-                // ----------------------------------------------------
-                // 10. Create the document database record.
-                // ----------------------------------------------------
-
-                var document = new LoanApplicationDocument
-                {
-                    LoanApplicationId = application.Id,
-
-                    LoanProductRequiredDocumentId =
-                        requiredDocument!.Id,
-
-                    OriginalFileName = originalFileName!,
-
-                    StorageKey = storageKey,
-
-                    ContentType = contentType!,
-
-                    FileExtension = extension!,
-
-                    FileSizeBytes = model.File!.Length,
-
-                    UploadedByUserId = userId,
-
-                    ReviewStatus = DocumentReviewStatus.Pending
-                };
-
-                _context.LoanApplicationDocuments.Add(document);
-
-                // ----------------------------------------------------
-                // 11. Check mandatory document completion.
-                // ----------------------------------------------------
-
-                if (application.Status ==
-                    LoanApplicationStatus.DocumentsRequired)
-                {
-                    var completionResult =
-                        await CheckApplicationDocumentCompletionAsync(
-                            application,
-                            borrower,
-                            requiredDocument.Id,
-                            userId);
-
-                    allMandatoryDocumentsSupplied =
-                        completionResult.AllDocumentsSupplied;
-
-                    waitingForKycVerification =
-                        completionResult.WaitingForKycVerification;
-                }
-
-                // ----------------------------------------------------
-                // 12. Save all database changes.
-                // ----------------------------------------------------
-
-                await _context.SaveChangesAsync();
-
-                databaseSaved = true;
-
-                // ----------------------------------------------------
-                // 13. Set the appropriate user feedback.
-                // ----------------------------------------------------
-
-                if (waitingForKycVerification)
-                {
-                    TempData["Warning"] =
-                        "Your document was uploaded successfully. All mandatory " +
-                        "loan documents have been supplied, but your application " +
-                        "is waiting for identity verification.";
-                }
-                else if (allMandatoryDocumentsSupplied &&
-                         application.Status == LoanApplicationStatus.Submitted)
-                {
-                    TempData["Success"] =
-                        "All mandatory loan documents have been supplied. " +
-                        "Your application has been submitted successfully.";
-                }
-                else
-                {
-                    TempData["Success"] =
-                        "Your document has been uploaded successfully.";
-                }
-
-                return RedirectToAction(
-                    "Details",
-                    "LoanApplications",
-                    new { id = application.Id });
+                return View(invalidModel);
             }
-            catch
+
+            TempData["Success"] =
+                "Your document has been uploaded. Review the requirements and submit the application when ready.";
+
+            return RedirectToAction("Screening", new { applicationId = application.Id });
+            //return RedirectToAction(
+               // "Details",
+               // "LoanApplications",
+                //new { id = application.Id });
+        }
+        [HttpGet]
+        public async Task<IActionResult> Screening(Guid applicationId)
+        {
+            var borrower = await GetCurrentBorrowerAsync();
+            if (borrower == null) return RedirectToAction("Step1", "Profile");
+
+            var application = await _context.LoanApplications.AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == applicationId && a.BorrowerId == borrower.Id);
+            if (application == null) return NotFound();
+
+            return View(new ScreeningPageViewModel
             {
-                // ----------------------------------------------------
-                // 14. Clean up if the operation fails.
-                // ----------------------------------------------------
-
-                // Do not delete the file if the database save already
-                // completed successfully.
-
-                if (!databaseSaved &&
-                    System.IO.File.Exists(physicalPath))
-                {
-                    System.IO.File.Delete(physicalPath);
-                }
-
-                throw;
-            }
+                LoanApplicationId = application.Id,
+                ApplicationNumber = application.ApplicationNumber
+            });
         }
 
-        // ============================================================
-        // HELPER: Check completion of mandatory loan documents.
-        // ============================================================
-
-        private async Task<DocumentCompletionResult>
-            CheckApplicationDocumentCompletionAsync(
-                LoanApplication application,
-                Borrower borrower,
-                Guid newlyUploadedRequirementId,
-                string userId)
+        [HttpGet]
+        public async Task<IActionResult> ScreeningStatus(Guid applicationId)
         {
-            var result = new DocumentCompletionResult();
+            var borrower = await GetCurrentBorrowerAsync();
+            if (borrower == null) return Unauthorized();
 
-            // --------------------------------------------------------
-            // 1. Retrieve active mandatory requirements.
-            // --------------------------------------------------------
+            var owns = await _context.LoanApplications
+                .AnyAsync(a => a.Id == applicationId && a.BorrowerId == borrower.Id);
+            if (!owns) return NotFound();
 
-            var mandatoryRequirements = await _context
-                .LoanProductRequiredDocuments
-                .AsNoTracking()
-                .Where(d =>
-                    d.LoanProductId == application.LoanProductId &&
-                    d.IsActive &&
-                    d.IsMandatory)
-                .Select(d => d.Id)
-                .ToListAsync();
-
-            // --------------------------------------------------------
-            // 2. Retrieve existing uploads for this application.
-            // --------------------------------------------------------
-
-            var existingUploads = await _context
-                .LoanApplicationDocuments
-                .AsNoTracking()
-                .Where(d =>
-                    d.LoanApplicationId == application.Id &&
-                    d.LoanProductRequiredDocumentId != null)
+            var rows = await _context.LoanApplicationDocuments.AsNoTracking()
+                .Where(d => d.LoanApplicationId == applicationId && d.IsCurrent)
+                .OrderBy(d => d.CreatedAt)
                 .Select(d => new
                 {
-                    RequiredDocumentId =
-                        d.LoanProductRequiredDocumentId!.Value,
-
-                    d.ReviewStatus,
-
-                    d.CreatedAt
+                    d.Id,
+                    Name = d.RequiredDocument != null ? d.RequiredDocument.DocumentName : d.OriginalFileName,
+                    d.ScreeningStatus
                 })
                 .ToListAsync();
 
-            // --------------------------------------------------------
-            // 3. Determine the latest upload for each requirement.
-            // --------------------------------------------------------
-
-            var suppliedIds = existingUploads
-                .GroupBy(d => d.RequiredDocumentId)
-                .Where(group =>
-                {
-                    var latestDocument = group
-                        .OrderByDescending(d => d.CreatedAt)
-                        .First();
-
-                    return latestDocument.ReviewStatus ==
-                               DocumentReviewStatus.Pending ||
-                           latestDocument.ReviewStatus ==
-                               DocumentReviewStatus.Verified;
-                })
-                .Select(group => group.Key)
-                .ToHashSet();
-
-            // Include the document currently being uploaded.
-            // It is Pending and has not yet been saved to the database.
-
-            suppliedIds.Add(newlyUploadedRequirementId);
-
-            // --------------------------------------------------------
-            // 4. Check whether all mandatory requirements are supplied.
-            // --------------------------------------------------------
-
-            result.AllDocumentsSupplied =
-                mandatoryRequirements.All(
-                    requiredId => suppliedIds.Contains(requiredId));
-
-            if (!result.AllDocumentsSupplied)
+            var documents = rows.Select(r => new
             {
-                return result;
-            }
+                id = r.Id,
+                name = r.Name,
+                status = r.ScreeningStatus.ToString(),
+                message = ApplicantMessage(r.ScreeningStatus)
+            });
 
-            // --------------------------------------------------------
-            // 5. Check borrower KYC status.
-            // --------------------------------------------------------
+            var done = rows.All(r => r.ScreeningStatus is not
+                (DocumentScreeningStatus.Queued or DocumentScreeningStatus.Scanning));
 
-            if (borrower.KycStatus != KycStatus.Verified)
-            {
-                result.WaitingForKycVerification = true;
-
-                return result;
-            }
-
-            // --------------------------------------------------------
-            // 6. Transition application to Submitted.
-            // --------------------------------------------------------
-
-            var previousStatus = application.Status;
-
-            application.Status = LoanApplicationStatus.Submitted;
-
-            application.UpdatedAt = DateTime.UtcNow;
-
-            _context.LoanApplicationStatusHistories.Add(
-                new LoanApplicationStatusHistory
-                {
-                    LoanApplicationId = application.Id,
-
-                    PreviousStatus = previousStatus,
-
-                    NewStatus = LoanApplicationStatus.Submitted,
-
-                    ChangedAt = DateTime.UtcNow,
-
-                    ChangedByUserId = userId,
-
-                    Notes =
-                        "All mandatory loan documents have been supplied " +
-                        "and borrower KYC is verified."
-                });
-
-            return result;
+            return Json(new { done, documents });
         }
 
-        // ============================================================
-        // HELPER: Retrieve the authenticated borrower's profile.
-        // ============================================================
+        private static string ApplicantMessage(DocumentScreeningStatus s) => s switch
+        {
+            DocumentScreeningStatus.Queued => "Waiting to be checked",
+            DocumentScreeningStatus.Scanning => "Checking against your profile...",
+            DocumentScreeningStatus.Passed => "Automatic checks passed",
+            DocumentScreeningStatus.Flagged => "We couldn't confirm everything automatically. You can replace this document, or continue and a loan officer will review it.",
+            DocumentScreeningStatus.Failed => "We couldn't check this file automatically. A loan officer will review it.",
+            _ => "Not checked"
+        };
+
+        //Retrieve the authenticated borrower's profile.
 
         private async Task<Borrower?> GetCurrentBorrowerAsync()
         {
@@ -543,9 +360,8 @@ namespace Kredvanta.Controllers
                     b.IsActive);
         }
 
-        // ============================================================
-        // HELPER: Determine whether document uploads are permitted.
-        // ============================================================
+        
+        //Determine whether document uploads are permitted.
 
         private static bool CanUpload(LoanApplicationStatus status)
         {
@@ -553,80 +369,71 @@ namespace Kredvanta.Controllers
                    status == LoanApplicationStatus.DocumentsRequired;
         }
 
-        // ============================================================
-        // HELPER: Build the upload view model.
-        // ============================================================
-
-        private async Task<UploadLoanApplicationDocumentViewModel>
-            BuildUploadViewModelAsync(
-                Guid applicationId,
-                Guid loanProductId,
-                string applicationNumber,
-                string productName)
+        //Build the upload view model.
+        private async Task<UploadLoanApplicationDocumentViewModel> BuildUploadViewModelAsync(
+    Guid applicationId,
+    Guid loanProductId,
+    string applicationNumber,
+    string productName)
         {
-            var requiredDocuments = await _context
-                .LoanProductRequiredDocuments
+            var requiredDocuments = await _context.LoanProductRequiredDocuments
                 .AsNoTracking()
-                .Where(d =>
-                    d.LoanProductId == loanProductId &&
-                    d.IsActive)
+                .Where(d => d.LoanProductId == loanProductId && d.IsActive)
                 .OrderByDescending(d => d.IsMandatory)
                 .ThenBy(d => d.DocumentName)
                 .Select(d => new RequiredDocumentOptionViewModel
                 {
                     Id = d.Id,
-
                     DocumentName = d.DocumentName,
-
                     Description = d.Description,
-
                     IsMandatory = d.IsMandatory,
-
                     RequiredPeriodMonths = d.RequiredPeriodMonths
                 })
                 .ToListAsync();
 
+            var current = await _context.LoanApplicationDocuments
+                .AsNoTracking()
+                .Where(x => x.LoanApplicationId == applicationId
+                         && x.IsCurrent
+                         && x.LoanProductRequiredDocumentId != null)
+                .Select(x => new
+                {
+                    RequirementId = x.LoanProductRequiredDocumentId!.Value,
+                    x.OriginalFileName,
+                    x.Version,
+                    x.CreatedAt,
+                    x.ReviewStatus,
+                    x.ScreeningStatus,
+                    x.ReviewComments
+                })
+                .ToListAsync();
+
+            foreach (var requirement in requiredDocuments)
+            {
+                var c = current.FirstOrDefault(x => x.RequirementId == requirement.Id);
+                if (c is null) continue;
+
+                requirement.Current = new UploadedDocumentSummary
+                {
+                    OriginalFileName = c.OriginalFileName,
+                    Version = c.Version,
+                    UploadedAt = c.CreatedAt,
+                    ReviewStatus = c.ReviewStatus,
+                    ScreeningStatus = c.ScreeningStatus,
+                    ReviewComments = c.ReviewComments
+                };
+            }
+
             return new UploadLoanApplicationDocumentViewModel
             {
                 LoanApplicationId = applicationId,
-
                 ApplicationNumber = applicationNumber,
-
                 LoanProductName = productName,
-
                 RequiredDocuments = requiredDocuments
             };
         }
 
-        // ============================================================
-        // HELPER: Resolve private document storage directory.
-        // ============================================================
-
-        private string GetStorageDirectory()
-        {
-            var configuredPath = _configuration[
-                "FileStorage:LoanApplicationDocumentsPath"];
-
-            if (string.IsNullOrWhiteSpace(configuredPath))
-            {
-                return Path.Combine(
-                    _environment.ContentRootPath,
-                    "App_Data",
-                    "PrivateDocuments",
-                    "LoanApplications");
-            }
-
-            return Path.IsPathRooted(configuredPath)
-                ? configuredPath
-                : Path.Combine(
-                    _environment.ContentRootPath,
-                    configuredPath);
-        }
-
-        // ============================================================
-        // HELPER: Resolve content type from file extension.
-        // ============================================================
-
+        // Resolve content type from file extension.
         private static string? GetContentType(string extension)
         {
             return extension switch
@@ -643,9 +450,7 @@ namespace Kredvanta.Controllers
             };
         }
 
-        // ============================================================
-        // HELPER: Validate the actual file signature.
-        // ============================================================
+        // Validate the actual file signature.
 
         private static async Task<bool> HasValidFileSignatureAsync(
             IFormFile file,
@@ -688,15 +493,5 @@ namespace Kredvanta.Controllers
             };
         }
 
-        // ============================================================
-        // RESULT MODEL: Document completion check.
-        // ============================================================
-
-        private class DocumentCompletionResult
-        {
-            public bool AllDocumentsSupplied { get; set; }
-
-            public bool WaitingForKycVerification { get; set; }
+            }
         }
-    }
-}

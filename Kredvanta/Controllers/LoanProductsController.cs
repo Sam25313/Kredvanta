@@ -1,6 +1,9 @@
-﻿
+﻿using System.Security.Claims;
+using Kredvanta.Authorization;
 using Kredvanta.Data;
 using Kredvanta.Models.Products;
+using Kredvanta.Services.Audit;
+using Kredvanta.Services.Eligibility;
 using Kredvanta.ViewModels.LoanProducts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,35 +15,36 @@ namespace Kredvanta.Controllers
     public class LoanProductsController : Controller
     {
         private const string StaffRoles =
-            "Administrator,CreditManager,LoanOfficer";
+            $"{AppRoles.Administrator},{AppRoles.CreditManager}";
 
         private const string ProductViewerRoles =
-            "Administrator,CreditManager,LoanOfficer,Borrower";
+            $"{AppRoles.Administrator},{AppRoles.CreditManager},{AppRoles.LoanOfficer}," +
+            $"{AppRoles.Auditor},{AppRoles.Borrower}";
 
         private readonly ApplicationDbContext _context;
+        private readonly IAuditService _audit;
+        private readonly IEligibilityService _eligibility;
 
-        public LoanProductsController(ApplicationDbContext context)
+        public LoanProductsController(
+            ApplicationDbContext context,
+            IAuditService audit,
+            IEligibilityService eligibility)
         {
             _context = context;
+            _audit = audit;
+            _eligibility = eligibility;
         }
 
-        // =========================================================
-        // PRODUCT CATALOGUE
-        // =========================================================
+        // ---------- Catalogue ----------
 
         [HttpGet]
         [Authorize(Roles = ProductViewerRoles)]
         public async Task<IActionResult> Index()
         {
-            var query = _context.LoanProducts
-                .AsNoTracking();
+            var query = _context.LoanProducts.AsNoTracking();
 
-            // Borrowers can see active products only.
-            // Application availability is handled separately in the view.
-            if (User.IsInRole("Borrower"))
-            {
-                query = query.Where(p => p.IsActive);
-            }
+            if (User.IsInRole(AppRoles.Borrower))
+                query = query.Where(p => p.IsActive && p.IsAvailableForApplication);
 
             var products = await query
                 .OrderByDescending(p => p.CreatedAt)
@@ -49,9 +53,7 @@ namespace Kredvanta.Controllers
             return View(products);
         }
 
-        // =========================================================
-        // PRODUCT DETAILS
-        // =========================================================
+        // ---------- Details ----------
 
         [HttpGet]
         [Authorize(Roles = ProductViewerRoles)]
@@ -62,59 +64,67 @@ namespace Kredvanta.Controllers
                 .Include(p => p.RequiredDocuments)
                 .AsQueryable();
 
-            if (User.IsInRole("Borrower"))
-            {
+            if (User.IsInRole(AppRoles.Borrower))
                 query = query.Where(p => p.IsActive);
-            }
 
-            var product = await query
-                .FirstOrDefaultAsync(p => p.Id == id);
+            var product = await query.FirstOrDefaultAsync(p => p.Id == id);
+            if (product == null) return NotFound();
 
-            if (product == null)
+            // Display only. LoanApplications.Create and the workflow guards enforce the same rules.
+            var reasons = new List<string>();
+
+            if (!product.IsActive || !product.IsAvailableForApplication)
+                reasons.Add("This product is not open for applications yet.");
+
+            if (User.IsInRole(AppRoles.Borrower))
             {
-                return NotFound();
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var borrowerId = await _context.Borrowers
+                    .Where(b => b.ApplicationUserId == userId && b.IsActive)
+                    .Select(b => (Guid?)b.Id)
+                    .FirstOrDefaultAsync();
+
+                if (borrowerId is null)
+                {
+                    reasons.Add("Complete your applicant profile first.");
+                }
+                else
+                {
+                    var result = await _eligibility.CheckAsync(borrowerId.Value);
+                    if (!result.IsEligible) reasons.AddRange(result.Reasons);
+                }
             }
+            else
+            {
+                reasons.Add("Sign in to your applicant account to apply.");
+            }
+
+            ViewBag.CanApply = reasons.Count == 0;
+            ViewBag.ApplyBlockReasons = reasons;
 
             return View(product);
         }
 
-        // =========================================================
-        // CREATE PRODUCT
-        // =========================================================
+        // ---------- Create ----------
 
         [HttpGet]
         [Authorize(Roles = StaffRoles)]
-        public IActionResult Create()
-        {
-            return View(new LoanProductFormViewModel());
-        }
+        public IActionResult Create() => View(new LoanProductFormViewModel());
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = StaffRoles)]
-        public async Task<IActionResult> Create(
-            LoanProductFormViewModel model)
+        public async Task<IActionResult> Create(LoanProductFormViewModel model)
         {
             ValidateProduct(model);
+            if (!ModelState.IsValid) return View(model);
 
-            if (!ModelState.IsValid)
+            var productCode = model.ProductCode.Trim().ToUpperInvariant();
+
+            if (await _context.LoanProducts.AnyAsync(p => p.ProductCode == productCode))
             {
-                return View(model);
-            }
-
-            var productCode = model.ProductCode
-                .Trim()
-                .ToUpperInvariant();
-
-            var codeExists = await _context.LoanProducts
-                .AnyAsync(p => p.ProductCode == productCode);
-
-            if (codeExists)
-            {
-                ModelState.AddModelError(
-                    nameof(model.ProductCode),
+                ModelState.AddModelError(nameof(model.ProductCode),
                     "A product with this code already exists.");
-
                 return View(model);
             }
 
@@ -141,38 +151,33 @@ namespace Kredvanta.Controllers
                 GracePeriodDays = model.GracePeriodDays,
 
                 IsActive = model.IsActive,
-                IsAvailableForApplication =
-                    model.IsAvailableForApplication
+                IsAvailableForApplication = model.IsAvailableForApplication
             };
 
+            var defaultRequirements = LoanProductRequirementDefaults.AddMissingTo(product);
             _context.LoanProducts.Add(product);
+            _context.LoanProductRequiredDocuments.AddRange(defaultRequirements);
+            _audit.Record("ProductCreated", nameof(LoanProduct), product.Id.ToString(), null, Snapshot(product));
 
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] =
-                "Loan product created successfully.";
-
+            TempData["SuccessMessage"] = "Loan product created successfully.";
             return RedirectToAction(nameof(Index));
         }
 
-        // =========================================================
-        // EDIT PRODUCT
-        // =========================================================
+        // ---------- Edit ----------
 
         [HttpGet]
         [Authorize(Roles = StaffRoles)]
         public async Task<IActionResult> Edit(Guid id)
         {
-            var product = await _context.LoanProducts
-                .AsNoTracking()
+            var product = await _context.LoanProducts.AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
+            if (product == null) return NotFound();
 
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            var model = new LoanProductFormViewModel
+            ViewBag.IsEdit = true;
+            ViewBag.ProductId = product.Id;
+            return View("Create", new LoanProductFormViewModel
             {
                 ProductCode = product.ProductCode,
                 ProductName = product.ProductName,
@@ -190,61 +195,37 @@ namespace Kredvanta.Controllers
                 MinimumTermPeriods = product.MinimumTermPeriods,
                 MaximumTermPeriods = product.MaximumTermPeriods,
 
-                ProcessingFeePercentage =
-                    product.ProcessingFeePercentage,
-
+                ProcessingFeePercentage = product.ProcessingFeePercentage,
                 ProcessingFeeFixed = product.ProcessingFeeFixed,
                 GracePeriodDays = product.GracePeriodDays,
 
                 IsActive = product.IsActive,
-                IsAvailableForApplication =
-                    product.IsAvailableForApplication
-            };
-
-            return View(model);
+                IsAvailableForApplication = product.IsAvailableForApplication
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = StaffRoles)]
-        public async Task<IActionResult> Edit(
-            Guid id,
-            LoanProductFormViewModel model)
+        public async Task<IActionResult> Edit(Guid id, LoanProductFormViewModel model)
         {
-            ValidateProduct(model);
+            var product = await _context.LoanProducts.FirstOrDefaultAsync(p => p.Id == id);
+            if (product == null) return NotFound();
 
+            // The product code is an identifier and is not editable after creation.
+            model.ProductCode = product.ProductCode;
+            ModelState.Remove(nameof(model.ProductCode));
+
+            ValidateProduct(model);
             if (!ModelState.IsValid)
             {
-                return View(model);
+                ViewBag.IsEdit = true;
+                ViewBag.ProductId = product.Id;
+                return View("Create", model);
             }
 
-            var product = await _context.LoanProducts
-                .FirstOrDefaultAsync(p => p.Id == id);
+            var before = Snapshot(product);
 
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            var productCode = model.ProductCode
-                .Trim()
-                .ToUpperInvariant();
-
-            var codeExists = await _context.LoanProducts
-                .AnyAsync(p =>
-                    p.ProductCode == productCode &&
-                    p.Id != id);
-
-            if (codeExists)
-            {
-                ModelState.AddModelError(
-                    nameof(model.ProductCode),
-                    "Another product already uses this code.");
-
-                return View(model);
-            }
-
-            product.ProductCode = productCode;
             product.ProductName = model.ProductName.Trim();
             product.Category = model.Category.Trim();
             product.Description = model.Description?.Trim();
@@ -260,92 +241,151 @@ namespace Kredvanta.Controllers
             product.MinimumTermPeriods = model.MinimumTermPeriods;
             product.MaximumTermPeriods = model.MaximumTermPeriods;
 
-            product.ProcessingFeePercentage =
-                model.ProcessingFeePercentage;
-
+            product.ProcessingFeePercentage = model.ProcessingFeePercentage;
             product.ProcessingFeeFixed = model.ProcessingFeeFixed;
             product.GracePeriodDays = model.GracePeriodDays;
 
             product.IsActive = model.IsActive;
-            product.IsAvailableForApplication =
-                model.IsAvailableForApplication;
+            product.IsAvailableForApplication = model.IsAvailableForApplication;
 
-            product.UpdatedAt = DateTime.UtcNow;
+            _audit.Record("ProductUpdated", nameof(LoanProduct), product.Id.ToString(), null,
+                new { Before = before, After = Snapshot(product) });
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();   // UpdatedAt is set by the DbContext
 
-            TempData["SuccessMessage"] =
-                "Loan product updated successfully.";
-
+            TempData["SuccessMessage"] = "Loan product updated successfully.";
             return RedirectToAction(nameof(Index));
         }
 
-        // =========================================================
-        // DEACTIVATE PRODUCT
-        // =========================================================
+        // ---------- Toggle application availability ----------
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = StaffRoles)]
+        public async Task<IActionResult> ToggleApplicationAvailability(Guid id)
+        {
+            var product = await _context.LoanProducts.FirstOrDefaultAsync(p => p.Id == id);
+            if (product == null) return NotFound();
+
+            if (!product.IsActive && !product.IsAvailableForApplication)
+            {
+                TempData["ErrorMessage"] = "Edit this product and activate it before opening applications.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var before = product.IsAvailableForApplication;
+            product.IsAvailableForApplication = !before;
+
+            _audit.Record(product.IsAvailableForApplication ? "ProductApplicationsOpened" : "ProductApplicationsClosed",
+                nameof(LoanProduct), product.Id.ToString(), null,
+                new { product.ProductCode, Before = before, After = product.IsAvailableForApplication });
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = product.IsAvailableForApplication
+                ? "Applications are now open for this product."
+                : "Applications are now closed for this product.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ---------- Activate ----------
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = StaffRoles)]
+        public async Task<IActionResult> Activate(Guid id)
+        {
+            var product = await _context.LoanProducts.FirstOrDefaultAsync(p => p.Id == id);
+            if (product == null) return NotFound();
+
+            if (product.IsActive)
+            {
+                TempData["InfoMessage"] = "This loan product is already active.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            product.IsActive = true;
+            product.IsAvailableForApplication = false;
+
+            _audit.Record("ProductActivated", nameof(LoanProduct), product.Id.ToString(), null,
+                new { product.ProductCode, ApplicationsRemainClosed = true });
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Loan product activated. Applications remain closed until you open them separately.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ---------- Deactivate ----------
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = StaffRoles)]
         public async Task<IActionResult> Deactivate(Guid id)
         {
-            var product = await _context.LoanProducts
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (product == null)
-            {
-                return NotFound();
-            }
+            var product = await _context.LoanProducts.FirstOrDefaultAsync(p => p.Id == id);
+            if (product == null) return NotFound();
 
             if (!product.IsActive)
             {
-                TempData["InfoMessage"] =
-                    "This loan product is already inactive.";
-
+                TempData["InfoMessage"] = "This loan product is already inactive.";
                 return RedirectToAction(nameof(Index));
             }
 
             product.IsActive = false;
-
-            // Also prevent new applications.
             product.IsAvailableForApplication = false;
 
-            product.UpdatedAt = DateTime.UtcNow;
+            _audit.Record("ProductDeactivated", nameof(LoanProduct), product.Id.ToString(), null,
+                new { product.ProductCode });
 
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] =
-                "Loan product deactivated successfully.";
-
+            TempData["SuccessMessage"] = "Loan product deactivated successfully.";
             return RedirectToAction(nameof(Index));
         }
 
-        // =========================================================
-        // PRODUCT VALIDATION
-        // =========================================================
+        // ---------- Helpers ----------
+
+        private static object Snapshot(LoanProduct p) => new
+        {
+            p.ProductCode,
+            p.ProductName,
+            p.Category,
+            p.MinimumAmount,
+            p.MaximumAmount,
+            p.AnnualInterestRate,
+            InterestMethod = p.InterestMethod.ToString(),
+            RepaymentFrequency = p.RepaymentFrequency.ToString(),
+            p.MinimumTermPeriods,
+            p.MaximumTermPeriods,
+            p.ProcessingFeePercentage,
+            p.ProcessingFeeFixed,
+            p.GracePeriodDays,
+            p.IsActive,
+            p.IsAvailableForApplication
+        };
 
         private void ValidateProduct(LoanProductFormViewModel model)
         {
             if (model.MinimumAmount > model.MaximumAmount)
-            {
-                ModelState.AddModelError(
-                    nameof(model.MaximumAmount),
+                ModelState.AddModelError(nameof(model.MaximumAmount),
                     "Maximum amount must be greater than or equal to minimum amount.");
-            }
 
             if (model.MinimumTermPeriods > model.MaximumTermPeriods)
-            {
-                ModelState.AddModelError(
-                    nameof(model.MaximumTermPeriods),
+                ModelState.AddModelError(nameof(model.MaximumTermPeriods),
                     "Maximum repayment period must be greater than or equal to minimum period.");
-            }
 
             if (string.IsNullOrWhiteSpace(model.Category))
-            {
-                ModelState.AddModelError(
-                    nameof(model.Category),
+                ModelState.AddModelError(nameof(model.Category),
                     "Please specify the product category.");
-            }
+
+            if (model.AnnualInterestRate < 0)
+                ModelState.AddModelError(nameof(model.AnnualInterestRate),
+                    "Interest rate cannot be negative.");
+
+            if (model.IsAvailableForApplication && !model.IsActive)
+                ModelState.AddModelError(nameof(model.IsAvailableForApplication),
+                    "An inactive product cannot accept applications.");
         }
     }
 }

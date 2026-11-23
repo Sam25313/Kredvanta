@@ -1,0 +1,17 @@
+﻿@using Kredvanta.Authorization
+@model List<string>
+
+@foreach (var p in StaffPresets.All)
+{
+    <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" name="presets" value="@p.Key" id="p_@p.Key"
+        @(Model.Contains(p.Key) ? "checked" : "") />
+        <label class="form-check-label" for="p_@p.Key">
+            <strong>@p.Label</strong><br /><span class="small text-muted">@p.Description</span>
+        </label>
+    </div>
+}
+<div class="small text-muted mt-2">
+    Not allowed together: credit analyst with credit manager, and the auditor with anything else.
+    The system also stops the person who recommended an application from approving it.
+</div>

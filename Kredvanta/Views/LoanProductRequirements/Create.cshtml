@@ -1,17 +1,18 @@
 ﻿@model Kredvanta.ViewModels.LoanProducts.LoanProductRequirementViewModel
 
 @{
-    ViewData["Title"] = "Add Document Requirement";
-    Layout = "_Layout";
+    var isEdit = Model.Id != Guid.Empty;
+    ViewData["Title"] = isEdit ? "Edit Document Requirement" : "Add Document Requirement";
+    Layout = User.IsInRole("Administrator") ? "_AdminLayout" : "_Layout";
 }
 
 <div class="container-fluid py-4">
 
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-            <h2 class="fw-bold mb-1">Add Document Requirement</h2>
+            <h2 class="fw-bold mb-1">@(isEdit ? "Edit Document Requirement" : "Add Document Requirement")</h2>
             <p class="text-muted mb-0">
-                Configure the documents borrowers must provide for this loan product.
+                Configure the documents applicants must provide for this loan product.
             </p>
         </div>
 
@@ -27,10 +28,11 @@
 
         <div class="col-lg-8">
 
-            <form asp-action="Create" method="post">
+            <form asp-action="@(isEdit ? "Edit" : "Create")" method="post">
 
                 @Html.AntiForgeryToken()
 
+                <input type="hidden" asp-for="Id" />
                 <input type="hidden" asp-for="LoanProductId" />
 
                 <div asp-validation-summary="ModelOnly"
@@ -87,7 +89,7 @@
                             <textarea asp-for="Description"
                                       class="form-control"
                                       rows="4"
-                                      placeholder="Describe what the borrower should upload..."></textarea>
+                                      placeholder="Describe what the applicant should upload..."></textarea>
 
                             <span asp-validation-for="Description"
                                   class="text-danger small"></span>
@@ -153,7 +155,7 @@
                                    class="form-check-label fw-semibold"></label>
 
                             <div class="form-text">
-                                Borrowers must submit this document before submitting their application.
+                                Applicants must upload this document before submitting their application.
                             </div>
                         </div>
 
@@ -168,7 +170,7 @@
                                    class="form-check-label fw-semibold"></label>
 
                             <div class="form-text">
-                                Only active requirements are displayed to borrowers.
+                                Only active requirements are displayed to applicants.
                             </div>
                         </div>
 
@@ -186,7 +188,7 @@
 
                     <button type="submit" class="btn btn-primary px-4">
                         <i class="bi bi-check-circle me-2"></i>
-                        Save Requirement
+                        @(isEdit ? "Save Changes" : "Save Requirement")
                     </button>
 
                 </div>

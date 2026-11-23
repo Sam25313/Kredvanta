@@ -56,19 +56,23 @@ Kredvanta uses Microsoft SQL Server.
 
 Create or identify a SQL Server database instance that will be used for development.
 
-Configure the `DefaultConnection` connection string using ASP.NET Core User Secrets.
-
-From the application project directory, run:
+Configure the `DefaultConnection` connection string using ASP.NET Core User Secrets. From the application project directory, initialize secrets if needed and set the key used by the application:
 
 ```powershell
 dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "<your SQL Server connection string>"
 ```
 
-Then configure the connection string:
+### Configure the Initial Administrator
+
+At startup, Kredvanta seeds identity roles. Administrator seeding is optional: if `SeedAdmin:Email` is missing, the application logs a warning and continues without creating or assigning an administrator account. Configure both values in User Secrets from the application project directory to seed one:
 
 ```powershell
-dotnet user-secrets set "ConnectionString" 
+dotnet user-secrets set "SeedAdmin:Email" "admin@example.com"
+dotnet user-secrets set "SeedAdmin:Password" "<a strong initial password>"
 ```
+
+Replace the example email and password with your own values. Keep secrets out of source control. The password is needed only when the administrator account is first created. If an email is configured for a new administrator but the password is missing, administrator seeding is skipped with a warning; the application still starts. Ensure an administrator account is provisioned before relying on staff-only features.
 
 ## 6. Install Entity Framework Core Tools
 

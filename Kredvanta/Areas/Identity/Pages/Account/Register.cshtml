@@ -11,17 +11,17 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kredvanta | Create Account</title>
+    <title>Kings Microfinance | Create Account</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
 
     <style>
             :root {
-                --navy: #101d36;
-                --navy-light: #1b3154;
-                --orange: #f58220;
-                --background: #f4f6fa;
+                --navy: #123b2a;
+                --navy-light: #1d5138;
+                --orange: #22c55e;
+                --background: #f3f8f4;
                 --muted: #718096;
                 --border: #e3e8f0;
             }
@@ -61,7 +61,7 @@
                 min-height: 760px;
                 padding: 48px 42px;
                 color: white;
-                background: radial-gradient(circle at 10% 90%, rgba(245,130,32,.22), transparent 32%), linear-gradient(145deg, #101d36, #1c365d);
+                background: radial-gradient(circle at 10% 90%, rgba(34,197,94,.20), transparent 32%), linear-gradient(145deg, #123b2a, #1d5138);
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
@@ -96,14 +96,13 @@
                 letter-spacing: -.7px;
             }
 
-            .brand-logo-icon {
-                width: 46px;
-                height: 46px;
-                display: grid;
-                place-items: center;
-                border-radius: 13px;
-                background: var(--orange);
-                font-size: 23px;
+            .brand-logo img {
+                display: block;
+                width: 118px;
+                height: 99px;
+                object-fit: contain;
+                border-radius: 8px;
+                background: #f7f7f2;
             }
 
             .brand-heading {
@@ -225,7 +224,7 @@
 
                     .input-group-custom .form-control:focus {
                         border-color: var(--orange);
-                        box-shadow: 0 0 0 3px rgba(245,130,32,.12);
+                        box-shadow: 0 0 0 3px rgba(34,197,94,.14);
                     }
 
             .password-toggle {
@@ -247,7 +246,7 @@
 
             .form-check-input:focus {
                 border-color: var(--orange);
-                box-shadow: 0 0 0 3px rgba(245,130,32,.12);
+                box-shadow: 0 0 0 3px rgba(34,197,94,.14);
             }
 
             .btn-register {
@@ -389,10 +388,7 @@
                         <div class="brand-content">
                             <a asp-area="" asp-controller="Home" asp-action="Index"
                                class="brand-logo">
-                                <span class="brand-logo-icon">
-                                    <i class="bi bi-wallet2"></i>
-                                </span>
-                                Kredvanta
+                                <img src="@Url.Content("~/images/kings-microfinance-logo.jpg")" alt="Kings Microfinance home" />
                             </a>
 
                             <h1 class="brand-heading">
@@ -401,7 +397,7 @@
                             </h1>
 
                             <p class="brand-description">
-                                Create your Kredvanta account and access a
+                                Create your Kings Microfinance account and access a
                                 simpler way to explore digital lending services.
                             </p>
 
@@ -439,7 +435,7 @@
                         </div>
 
                         <div class="brand-footer">
-                            &copy; @DateTime.Now.Year Kredvanta. All rights reserved.
+                            &copy; @DateTime.Now.Year Kings Microfinance. All rights reserved.
                         </div>
                     </section>
                 </div>
@@ -451,16 +447,13 @@
                         <div class="mobile-brand">
                             <a asp-area="" asp-controller="Home" asp-action="Index"
                                class="brand-logo" style="color: var(--navy);">
-                                <span class="brand-logo-icon">
-                                    <i class="bi bi-wallet2"></i>
-                                </span>
-                                Kredvanta
+                                <img src="@Url.Content("~/images/kings-microfinance-logo.jpg")" alt="Kings Microfinance home" />
                             </a>
                         </div>
 
                         <h2 class="form-heading mb-2">Create your account</h2>
                         <p class="form-subtitle mb-4">
-                            Join Kredvanta and get started in a few simple steps.
+                            Join Kings Microfinance and get started in a few simple steps.
                         </p>
 
                         <div class="divider">REGISTER WITH EMAIL</div>
@@ -572,7 +565,7 @@
                             <a asp-area="" asp-controller="Home" asp-action="Index"
                                class="text-decoration-none small text-secondary">
                                 <i class="bi bi-arrow-left me-1"></i>
-                                Back to Kredvanta home
+                                Back to Kings Microfinance home
                             </a>
                         </div>
 

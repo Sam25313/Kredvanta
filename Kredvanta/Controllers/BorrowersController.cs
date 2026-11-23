@@ -38,25 +38,29 @@ namespace Kredvanta.Controllers
 
                 query = query.Where(b =>
                     b.FirstName.Contains(search) ||
+                    (b.MiddleName != null && b.MiddleName.Contains(search)) ||
                     b.LastName.Contains(search) ||
+                    (b.Email != null && b.Email.Contains(search)) ||
                     b.NationalIdNumber.Contains(search) ||
                     b.PhoneNumber.Contains(search) ||
                     b.BorrowerNumber.Contains(search));
             }
 
             var totalRecords = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
+            page = totalPages == 0 ? 1 : Math.Min(page, totalPages);
 
             var borrowers = await query
                 .OrderBy(b => b.FirstName)
                 .ThenBy(b => b.LastName)
+                .ThenBy(b => b.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             ViewBag.Search = search;
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages =
-                (int)Math.Ceiling(totalRecords / (double)pageSize);
+            ViewBag.TotalPages = totalPages;
             ViewBag.TotalRecords = totalRecords;
 
             return View(borrowers);
@@ -100,7 +104,7 @@ namespace Kredvanta.Controllers
             {
                 ModelState.AddModelError(
                     nameof(model.NationalIdNumber),
-                    "A borrower with this National ID already exists.");
+                    "An applicant with this National ID already exists.");
             }
 
             if (!ModelState.IsValid)
@@ -140,7 +144,7 @@ namespace Kredvanta.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] =
-                "Borrower registered successfully.";
+                "Applicant registered successfully.";
 
             return RedirectToAction(nameof(Index));
         }
@@ -207,7 +211,7 @@ namespace Kredvanta.Controllers
             {
                 ModelState.AddModelError(
                     nameof(model.NationalIdNumber),
-                    "Another borrower already uses this National ID.");
+                    "Another applicant already uses this National ID.");
             }
 
             if (!ModelState.IsValid)
@@ -247,7 +251,7 @@ namespace Kredvanta.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] =
-                "Borrower information updated successfully.";
+                "Applicant information updated successfully.";
 
             return RedirectToAction(nameof(Details), new { id });
         }
@@ -269,7 +273,7 @@ namespace Kredvanta.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] =
-                "Borrower account deactivated successfully.";
+                "Applicant account deactivated successfully.";
 
             return RedirectToAction(nameof(Index));
         }

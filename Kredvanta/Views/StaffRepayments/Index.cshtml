@@ -1,0 +1,44 @@
+﻿@using static Kredvanta.Models.Enums.LendingEnums
+@model List<Kredvanta.Controllers.StaffRepaymentsController.LoanRow>
+@{
+    ViewData["Title"] = "Repayments";
+}
+
+<h2 class="fw-bold mb-1">Repayments</h2>
+<p class="text-muted">Record payments received and follow up overdue loans. Overdue loans are listed first.</p>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-5"><input name="q" value="@ViewBag.Q" class="form-control" placeholder="Loan number, borrower number, name or phone" /></div>
+    <div class="col-auto d-flex align-items-center">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="overdueOnly" value="true" id="od" @(ViewBag.OverdueOnly == true ? "checked" : "") />
+            <label class="form-check-label" for="od">Overdue only</label>
+        </div>
+    </div>
+    <div class="col-auto"><button class="btn btn-outline-primary">Search</button></div>
+</form>
+
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead class="table-light"><tr><th class="ps-3">Loan</th><th>Borrower</th><th>Balance (KES)</th><th>Status</th><th>Overdue instalments</th><th>Next due</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var l in Model)
+                {
+                    <tr>
+                        <td class="ps-3 fw-semibold">@l.Number</td>
+                        <td>@l.Borrower</td>
+                        <td>@l.Balance.ToString("N2")</td>
+                        <td><span class="badge @(l.Status == LoanStatus.Overdue ? "bg-danger" : "bg-success")">@l.Status</span></td>
+                        <td>@(l.OverdueInstalments > 0 ? l.OverdueInstalments.ToString() : "—")</td>
+                        <td>@(l.NextDue?.ToString("dd MMM yyyy") ?? "—")</td>
+                        <td class="pe-3"><a class="btn btn-sm btn-primary" asp-action="Loan" asp-route-id="@l.Id">Open</a></td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">No loans found.</td></tr>
+                }
+            </tbody>        </table>
+        </div>
+    </div>
