@@ -1,10 +1,10 @@
 # Kredvanta – Digital Microfinance Management System
 
 <p align="center">
-  <strong>A modern digital platform for borrower onboarding and loan management.</strong>
+  <strong>A modern digital platform for applicant onboarding and loan management.</strong>
 </p>
 
-Kredvanta is a web-based microfinance management application built with ASP.NET Core MVC and Microsoft SQL Server. It aims to digitize lending operations by providing a centralized platform for borrower management, loan applications, document handling and administrative operations.
+Kredvanta is a web-based microfinance management application built with ASP.NET Core MVC and Microsoft SQL Server. It aims to digitize lending operations by providing a centralized platform for applicant management, loan applications, document handling and administrative operations.
 
 **Project Status:** Under Active Development
 
@@ -29,21 +29,21 @@ The long-term goal is to provide an accessible, secure and efficient lending man
 ![Kredvanta Product Page](Screenshots/ProductSection.png)
 
 
-### Borrower Oboarding Workflow
+### Applicant Onboarding Workflow
 
-![Borrower Management](Screenshots/Step1.png)
-![Borrower Management](Screenshots/Step2.png)
-![Borrower Management](Screenshots/Step3.png)
-![Borrower Management](Screenshots/Review.png)
+![Applicant Management](Screenshots/Step1.png)
+![Applicant Management](Screenshots/Step2.png)
+![Applicant Management](Screenshots/Step3.png)
+![Applicant Management](Screenshots/Review.png)
 
-![Borrower Management](Screenshots/BorrowerDashboard.png)
+![Applicant Management](Screenshots/BorrowerDashboard.png)
 
 ### Mobile Interface
 
 ![Kredvanta Mobile View](Screenshots/MobilePrev.png)
 
 ## Footer
-![Borrower Management](Screenshots/Footer.png)
+![Applicant Management](Screenshots/Footer.png)
 
 *Screenshots will be added as the corresponding interfaces are completed.*
 
@@ -68,8 +68,8 @@ The planned application modules include:
 
 - User authentication and authorization.
 - Role-based access control.
-- Borrower management.
-- Multi-step borrower onboarding.
+- Applicant management.
+- Multi-step applicant onboarding.
 - Loan product management.
 - Loan application management.
 - Supporting document uploads.
@@ -156,7 +156,7 @@ See [SECURITY.md](docs/SECURITY.md).
 
 The application is under active development. Planned improvements include:
 
-- Completing borrower onboarding.
+- Completing applicant onboarding.
 - Loan application processing workflows.
 - Loan approval and disbursement.
 - Repayment management.

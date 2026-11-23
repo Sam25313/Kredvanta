@@ -1,0 +1,143 @@
+﻿@using static Kredvanta.Models.Enums.LendingEnums
+@model Kredvanta.ViewModels.Staff.OperationsOffersViewModel
+
+@{
+    ViewData["Title"] = "Offer operations";
+    Layout = "_StaffLayout";
+    var managerReviewCount = Model.Applications.Count(item => item.Status == LoanApplicationStatus.Approved && !item.CanPrepare);
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <span class="text-uppercase small fw-semibold text-success">Operations workspace</span>
+            <h1 class="h2 fw-bold mb-1">Offer operations</h1>
+            <p class="text-muted mb-0">Prepare verified loan offers after credit-manager approval, then track the applicant hand-off.</p>
+        </div>
+        <a asp-controller="StaffHome" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>My work
+        </a>
+    </div>
+
+    @foreach (var (key, css) in new[] { ("Success", "success"), ("Error", "danger"), ("Warning", "warning") })
+    {
+        if (TempData[key] is string message)
+        {
+            <div class="alert alert-@css alert-dismissible fade show" role="status">
+                @message
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss"></button>
+            </div>
+        }
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body">
+                <div class="small text-muted">Ready to prepare</div><div class="display-6 fw-bold text-primary">@Model.ReadyToPrepare</div>
+                <div class="small text-muted">Manager-approved applications</div>
+            </div></div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body">
+                <div class="small text-muted">Awaiting applicant</div><div class="display-6 fw-bold text-warning">@Model.WaitingForApplicant</div>
+                <div class="small text-muted">Offer issued for review</div>
+            </div></div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body">
+                <div class="small text-muted">Agreement pending</div><div class="display-6 fw-bold text-info">@Model.AgreementsPending</div>
+                <div class="small text-muted">Applicant accepted; signature needed</div>
+            </div></div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body">
+                <div class="small text-muted">Ready for Finance</div><div class="display-6 fw-bold text-success">@Model.ReadyForFinance</div>
+                <div class="small text-muted">Agreement signed; next team is Finance</div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="alert alert-info border-0 shadow-sm rounded-4" role="note">
+        <div class="d-flex gap-3">
+            <i class="bi bi-info-circle fs-4"></i>
+            <div><strong>When can I issue an offer?</strong><br />Only after a Credit Manager has approved the application. Review the approved amount, product terms and repayment schedule before issuing. This screen does not approve loans or disburse funds.</div>
+        </div>
+    </div>
+
+    @if (managerReviewCount > 0)
+    {
+        <div class="alert alert-warning" role="alert">
+            @managerReviewCount approved application(s) have no recorded approval entry, so offer issuance is blocked. Ask a Credit Manager to review the application decision record.
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white border-0 p-4">
+            <h2 class="h5 fw-bold mb-1">Applications in the offer journey</h2>
+            <p class="small text-muted mb-0">Oldest manager decisions appear first.</p>
+        </div>
+        @if (Model.Applications.Count == 0)
+        {
+            <div class="text-center px-4 py-5">
+                <div class="rounded-circle bg-light d-inline-flex p-3 mb-3"><i class="bi bi-inbox fs-3 text-muted"></i></div>
+                <h3 class="h5 fw-bold">No applications are at the offer stage</h3>
+                <p class="text-muted mx-auto mb-3" style="max-width: 560px">Applications appear here after a Credit Manager approves them. Once approved, you can review the terms and issue the offer to the applicant.</p>
+                <a asp-controller="StaffApplications" asp-action="Index" class="btn btn-outline-primary">View applications</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th class="ps-4">Application</th><th>Applicant / product</th><th>Amount</th><th>Current step</th><th>Offer</th><th class="text-end pe-4">Action</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in Model.Applications)
+                        {
+                            var statusClass = item.Status switch
+                            {
+                                LoanApplicationStatus.Approved => "text-bg-primary",
+                                LoanApplicationStatus.OfferIssued => "text-bg-warning",
+                                LoanApplicationStatus.AgreementPending => "text-bg-info",
+                                _ => "text-bg-success"
+                            };
+                            <tr>
+                                <td class="ps-4"><div class="fw-semibold">@item.ApplicationNumber</div><div class="small text-muted">@(item.DecisionAt?.ToLocalTime().ToString("dd MMM yyyy") ?? "Decision date unavailable")</div></td>
+                                <td><div class="fw-semibold">@item.ApplicantName</div><div class="small text-muted">@item.ProductName</div></td>
+                                <td><div class="fw-semibold">KES @((item.ApprovedAmount ?? item.RequestedAmount).ToString("N2"))</div><div class="small text-muted">Approved principal</div></td>
+                                <td><span class="badge @statusClass">@item.NextStep</span></td>
+                                <td>
+                                    @if (item.OfferVersion is int version)
+                                    {
+                                        <div class="small fw-semibold">v@version · @item.OfferStatus</div>
+                                        @if (item.OfferExpiresAt is DateTime expiresAt && item.OfferStatus is OfferStatus.Issued or OfferStatus.Accepted)
+                                        {
+                                            <div class="small text-muted">Expires @expiresAt.ToLocalTime().ToString("dd MMM yyyy")</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="small text-muted">Not issued</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4">
+                                    @if (item.CanPrepare)
+                                    {
+                                        <a class="btn btn-sm btn-primary" asp-action="Issue" asp-route-id="@item.Id"><i class="bi bi-file-earmark-plus me-1"></i>Prepare offer</a>
+                                    }
+                                    else if (item.Status == LoanApplicationStatus.ReadyForDisbursement)
+                                    {
+                                        <span class="small text-muted">Finance hand-off</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="small text-muted">No operations action</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

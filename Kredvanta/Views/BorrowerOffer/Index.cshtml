@@ -1,0 +1,130 @@
+﻿@using static Kredvanta.Models.Enums.LendingEnums
+@model Kredvanta.Controllers.BorrowerOfferController.OfferPage
+@{
+    ViewData["Title"] = "Your loan offer"; var o = Model.Offer;
+}
+
+<div class="container py-4" style="max-width: 900px;">
+    <a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none text-muted"><i class="bi bi-arrow-left me-1"></i>Back to dashboard</a>
+    <h2 class="fw-bold mt-2 mb-1">Your loan offer</h2>
+    <p class="text-muted">Application @Model.Number</p>
+
+    @if (o is null)
+    {
+        <div class="alert alert-info">Your offer is being prepared. We will show it here as soon as it is ready.</div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h5 class="fw-bold">Terms</h5>
+                    <span class="badge bg-secondary">@o.Status</span>
+                </div>
+                <dl class="row mb-0">
+                    <dt class="col-6 col-md-4 text-muted">Loan amount</dt>
+                    <dd class="col-6 col-md-8">KES @o.Principal.ToString("N2")</dd>
+                    <dt class="col-6 col-md-4 text-muted">Processing fee</dt>
+                    <dd class="col-6 col-md-8">KES @o.ProcessingFee.ToString("N2"), deducted from what you receive</dd>
+                    <dt class="col-6 col-md-4 text-muted">You receive</dt>
+                    <dd class="col-6 col-md-8">KES @((o.Principal - o.ProcessingFee).ToString("N2"))</dd>
+                    <dt class="col-6 col-md-4 text-muted">Interest</dt>
+                    <dd class="col-6 col-md-8">@o.AnnualInterestRate.ToString("N2")% a year (@o.InterestMethod), KES @o.TotalInterest.ToString("N2") in total</dd>
+                    <dt class="col-6 col-md-4 text-muted">Total cost of credit</dt>
+                    <dd class="col-6 col-md-8">KES @((o.TotalInterest + o.ProcessingFee).ToString("N2")) (interest plus fees)</dd>
+                    <dt class="col-6 col-md-4 text-muted">Total you repay</dt>
+                    <dd class="col-6 col-md-8">KES @o.TotalRepayable.ToString("N2")</dd>
+                    <dt class="col-6 col-md-4 text-muted">Repayments</dt>
+                    <dd class="col-6 col-md-8">@o.TermPeriods @o.RepaymentFrequency instalments of about KES @o.InstalmentAmount.ToString("N2")</dd>
+                    <dt class="col-6 col-md-4 text-muted">First and last due</dt>
+                    <dd class="col-6 col-md-8">@o.FirstDueDate.ToString("dd MMM yyyy") to @o.MaturityDate.ToString("dd MMM yyyy")</dd>
+                    @if (!string.IsNullOrWhiteSpace(o.Conditions))
+                    {
+                        <dt class="col-6 col-md-4 text-muted">Conditions</dt>
+                        <dd class="col-6 col-md-8">@o.Conditions</dd>
+                    }
+                    <dt class="col-6 col-md-4 text-muted">Offer valid until</dt>
+                    <dd class="col-6 col-md-8">@o.ExpiresAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold">Repayment schedule</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light"><tr><th class="ps-3">#</th><th>Due</th><th>Principal</th><th>Interest</th><th>Total</th></tr></thead>
+                    <tbody>
+                        @foreach (var l in Model.Schedule)
+                        {
+                            <tr><td class="ps-3">@l.Number</td><td>@l.DueDate.ToString("dd MMM yyyy")</td><td>@l.Principal.ToString("N2")</td><td>@l.Interest.ToString("N2")</td><td>@l.Total.ToString("N2")</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (Model.CanAccept)
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <p class="mb-3">Read the terms above. Accepting lets you read and sign the agreement. Nothing is paid out until the agreement is signed and our finance team releases the funds.</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <form asp-action="Accept" asp-route-id="@Model.ApplicationId" method="post">
+                            <button class="btn btn-primary">Accept this offer</button>
+                        </form>
+                        <form asp-action="Decline" asp-route-id="@Model.ApplicationId" method="post" class="d-flex gap-2"
+                              onsubmit="return confirm('Decline this offer? Your application will be closed.');">
+                            <input name="reason" class="form-control" placeholder="Reason (optional)" />
+                            <button class="btn btn-outline-danger text-nowrap">Decline</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+
+    @if (Model.Agreement is { } a)
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold">Loan agreement <span class="badge bg-secondary ms-1">@a.Status</span></span>
+                <a class="btn btn-sm btn-outline-secondary" asp-action="Download" asp-route-id="@Model.ApplicationId">Download copy</a>
+            </div>
+            <div class="card-body"><pre style="white-space: pre-wrap; max-height: 420px; overflow:auto;" class="small mb-0">@a.Text</pre></div>
+        </div>
+
+        @if (Model.CanSign)
+        {
+            @if (!Model.SigningEnabled)
+            {
+                <div class="alert alert-warning">Signing is not available yet because the agreement is awaiting legal approval. Please check back soon.</div>
+            }
+            else
+            {
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="fw-bold">Sign the agreement</h5>
+                        <form asp-action="Sign" asp-route-id="@Model.ApplicationId" method="post" class="row g-3">
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="agreed" value="true" id="agreed" />
+                                    <label class="form-check-label" for="agreed">I have read and understood this agreement and I agree to be bound by it.</label>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Enter your password to sign</label>
+                                <input type="password" name="password" class="form-control" autocomplete="current-password" />
+                            </div>
+                            <div class="col-12"><button class="btn btn-success">Sign agreement</button></div>
+                        </form>
+                    </div>
+                </div>
+            }
+        }
+        else if (a.Status == AgreementStatus.Signed)
+        {
+            <div class="alert alert-success">You signed this agreement. We are now preparing your loan for disbursement.</div>
+        }
+    }
+</div>

@@ -1,9 +1,9 @@
 ﻿
 :root {
-    --admin-navy: #10264b;
-    --admin-navy-light: #193965;
-    --admin-active: #244b7c;
-    --admin-background: #f4f7fb;
+    --admin-navy: #123b2a;
+    --admin-navy-light: #1d5138;
+    --admin-active: #247044;
+    --admin-background: #f3f8f4;
     --admin-border: #e8edf4;
     --admin-text: #243247;
     --admin-muted: #8290a3;
@@ -67,6 +67,15 @@ body {
     .brand-link:hover {
         color: white;
     }
+
+.sidebar-logo {
+    width: 68px;
+    height: 60px;
+    border-radius: 6px;
+    background: #ffffff;
+    object-fit: contain;
+    flex-shrink: 0;
+}
 
 .brand-icon {
     width: 43px;
@@ -146,7 +155,7 @@ body {
         color: white;
         background: var(--admin-active);
         font-weight: 600;
-        box-shadow: inset 3px 0 #78aaff;
+        box-shadow: inset 3px 0 #86efac;
     }
 
     .sidebar-link.disabled {

@@ -4,7 +4,7 @@
 
 Kredvanta is designed as an integrated digital microfinance management platform.
 
-The application aims to centralise borrower registration, lending operations, loan processing, repayment tracking and administrative management.
+The application aims to centralise applicant registration, lending operations, loan processing, repayment tracking and administrative management.
 
 This document describes the application's functional modules and development scope.
 
@@ -22,25 +22,25 @@ Its responsibilities include:
 - Role-based authorization.
 - External authentication support where configured.
 
-## 3. Borrower Management
+## 3. Applicant Management
 
-The borrower management module maintains borrower information.
+The applicant management module maintains applicant information.
 
 Its intended capabilities include:
 
-- Borrower registration.
+- Applicant registration.
 - Personal information management.
 - Identification information.
 - Contact and residential information.
 - Employment information.
 - Income information.
-- Borrower profile management.
-- Borrower record searching.
-- Borrower verification document management.
+- Applicant profile management.
+- Applicant record searching.
+- Applicant verification document management.
 
-## 4. Borrower Onboarding
+## 4. Applicant Onboarding
 
-Kredvanta uses a multi-step borrower onboarding approach.
+Kredvanta uses a multi-step applicant onboarding approach.
 
 The onboarding process is intended to collect information in manageable stages.
 
@@ -69,7 +69,7 @@ Product configuration includes:
 
 ## 6. Loan Application Management
 
-The loan application module manages borrower loan requests.
+The loan application module manages requests from applicants.
 
 Its intended capabilities include:
 
@@ -84,7 +84,7 @@ Its intended capabilities include:
 
 ## 7. Document Management
 
-The application supports document metadata management for borrower verification and loan applications.
+The application supports document metadata management for applicant verification and loan applications.
 
 Document information includes:
 
@@ -101,7 +101,7 @@ Actual document storage and download functionality must be configured and secure
 
 ## 8. Credit Assessment
 
-The credit assessment module is designed to support evaluation of borrower repayment capacity.
+The credit assessment module is designed to support evaluation of applicants' repayment capacity.
 
 Its data model includes:
 
@@ -118,14 +118,18 @@ Its data model includes:
 
 The loan processing module supports the transition from an application to an issued loan.
 
+Finance Officers can review signed offers waiting for payout, record the payment method, recipient destination and provider reference, and confirm the amount sent. The amount must match the signed offer's principal less its processing fee. A successful record creates the loan and repayment schedule and moves the application to Disbursed in one transaction.
+
+Payout records are audited, provider references are unique, and idempotency keys protect against duplicate submissions. This workflow records staff-confirmed payouts; direct payment-provider integration is not included.
+
 The database includes:
 
 - Loan approval records.
 - Approval levels.
 - Reviewing officers.
-- Issued loan records.
+- Issued loan records linked to their accepted offers.
 - Loan financial snapshots.
-- Loan disbursement records.
+- Loan disbursement records with recipient, reference and idempotency tracking.
 
 ## 10. Loan Repayment Management
 
@@ -162,7 +166,7 @@ The dashboard is intended to provide an overview of important microfinance opera
 
 Potential dashboard information includes:
 
-- Total borrowers.
+- Total applicants.
 - Total loan applications.
 - Loans issued.
 - Outstanding loan balances.

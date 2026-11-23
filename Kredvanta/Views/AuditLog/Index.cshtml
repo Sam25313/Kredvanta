@@ -1,0 +1,67 @@
+﻿@model List<Kredvanta.Controllers.AuditLogController.AuditRow>
+@{
+    ViewData["Title"] = "Audit log";
+    Layout = User.IsInRole("Administrator") ? "_AdminLayout" : "_StaffLayout";
+    int currentPage = ViewBag.Page, size = ViewBag.PageSize, total = ViewBag.Total;
+    var pages = (int)Math.Ceiling(total / (double)size);
+}
+
+<div class="container-fluid py-4">
+    <h2 class="fw-bold mb-1">Audit log</h2>
+    <p class="text-muted">Read-only. @total event(s) match.</p>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-2"><input name="action" value="@ViewBag.Action" class="form-control" placeholder="Action" /></div>
+        <div class="col-md-2"><input name="entity" value="@ViewBag.Entity" class="form-control" placeholder="Entity, e.g. LoanApplication" /></div>
+        <div class="col-md-3"><input name="entityId" value="@ViewBag.EntityId" class="form-control" placeholder="Record id" /></div>
+        <div class="col-md-2"><input type="date" name="from" value="@ViewBag.From" class="form-control" /></div>
+        <div class="col-md-2"><input type="date" name="to" value="@ViewBag.To" class="form-control" /></div>
+        <div class="col-md-1"><button class="btn btn-outline-primary w-100">Filter</button></div>
+    </form>
+
+    <div class="card border-0 shadow-sm"><div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr>
+                <th class="ps-3">When</th><th>Who</th><th>Action</th><th>Record</th><th>Details</th><th>IP</th></tr></thead>
+            <tbody>
+            @foreach (var r in Model)
+            {
+                <tr>
+                    <td class="ps-3 text-nowrap">@r.At.ToLocalTime().ToString("dd MMM yyyy HH:mm:ss")</td>
+                    <td>@r.User</td>
+                    <td class="fw-semibold">@r.Action</td>
+                    <td class="small">@r.Entity<br /><span class="text-muted text-break">@r.EntityId</span></td>
+                    <td class="small">
+                        @r.Description
+                        @if (!string.IsNullOrWhiteSpace(r.Changes))
+                        {
+                            <details><summary class="text-muted">Changes</summary><code class="text-break">@r.Changes</code></details>
+                        }
+                    </td>
+                    <td class="small text-muted">@r.Ip</td>
+                </tr>
+            }
+            @if (!Model.Any()) { <tr><td colspan="6" class="text-center text-muted py-4">No events found.</td></tr> }
+            </tbody>
+        </table>
+    </div></div>
+
+    @if (pages > 1)
+    {
+        <nav class="mt-3 d-flex gap-2 align-items-center">
+            @if (currentPage > 1)
+            {
+                <a class="btn btn-sm btn-outline-secondary" asp-action="Index"
+                   asp-route-page="@(currentPage - 1)" asp-route-action="@ViewBag.Action" asp-route-entity="@ViewBag.Entity"
+                   asp-route-entityId="@ViewBag.EntityId" asp-route-from="@ViewBag.From" asp-route-to="@ViewBag.To">Previous</a>
+            }
+            <span class="small text-muted">Page @currentPage of @pages</span>
+            @if (currentPage < pages)
+            {
+                <a class="btn btn-sm btn-outline-secondary" asp-action="Index"
+                   asp-route-page="@(currentPage + 1)" asp-route-action="@ViewBag.Action" asp-route-entity="@ViewBag.Entity"
+                   asp-route-entityId="@ViewBag.EntityId" asp-route-from="@ViewBag.From" asp-route-to="@ViewBag.To">Next</a>
+            }
+        </nav>
+    }
+</div>

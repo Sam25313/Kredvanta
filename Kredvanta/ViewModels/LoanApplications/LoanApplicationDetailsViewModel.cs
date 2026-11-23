@@ -26,12 +26,14 @@ namespace Kredvanta.ViewModels.LoanApplications
 
         public DateTime? DecisionAt { get; set; }
 
+        public bool CanUploadDocuments { get; set; }
+
         public List<ApplicationHistoryItemViewModel> History
         { get; set; } = new();
 
         public List<ApplicationDocumentItemViewModel> Documents
         { get; set; } = new();
-        public List<RequiredApplicationDocumentViewModel>RequiredDocuments{ get; set; } = new();
+        public List<RequiredApplicationDocumentViewModel> RequiredDocuments { get; set; } = new();
     }
 
     public class ApplicationHistoryItemViewModel
@@ -51,6 +53,8 @@ namespace Kredvanta.ViewModels.LoanApplications
     {
         public Guid Id { get; set; }
 
+        public Guid? DocumentId { get; set; }
+
         public string OriginalFileName { get; set; } = string.Empty;
 
         public string? RequiredDocumentName { get; set; }
@@ -60,10 +64,16 @@ namespace Kredvanta.ViewModels.LoanApplications
         public string? ReviewComments { get; set; }
 
         public DateTime UploadedAt { get; set; }
+
+        public int Version { get; set; } = 1;
+
+        public bool IsCurrent { get; set; } = true;
     }
     public class RequiredApplicationDocumentViewModel
     {
         public Guid Id { get; set; }
+
+        public Guid? DocumentId { get; set; }
 
         public string DocumentName { get; set; } = string.Empty;
 
@@ -80,6 +90,11 @@ namespace Kredvanta.ViewModels.LoanApplications
         public DateTime? UploadedAt { get; set; }
 
         public bool IsSatisfied { get; set; }
+
+        public int Version { get; set; } = 1;
+
+        public string? BorrowerMessage { get; set; }
+        public bool CanUploadDocuments { get; set; }
     }
 
 

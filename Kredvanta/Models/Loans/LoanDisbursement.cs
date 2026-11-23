@@ -1,4 +1,5 @@
 ﻿
+using System.ComponentModel.DataAnnotations;
 using Kredvanta.Models.Common;
 using Kredvanta.Models.Enums;
 using Kredvanta.Models.Identity;
@@ -20,6 +21,12 @@ namespace Kredvanta.Models.Loans
             = DisbursementStatus.Pending;
 
         public string? TransactionReference { get; set; }
+
+        [MaxLength(64)]
+        public string? IdempotencyKey { get; set; }
+
+        [Timestamp]
+        public byte[] RowVersion { get; set; } = null!;
 
         public string? RecipientAccount { get; set; }
 

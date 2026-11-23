@@ -22,7 +22,7 @@
     }
 
     .onboarding-header {
-        background: #10243a;
+        background: linear-gradient(120deg, #14532d, #166534);
         color: #fff;
         padding: 28px 32px;
     }
@@ -46,7 +46,7 @@
     .section-heading {
         font-size: 15px;
         font-weight: 700;
-        color: #0f766e;
+        color: #166534;
         margin: 24px 0 17px;
         padding-bottom: 10px;
         border-bottom: 1px solid #e2e8f0;
@@ -75,8 +75,8 @@
     }
 
     .form-control:focus, .form-select:focus {
-        border-color: #0f766e;
-        box-shadow: 0 0 0 3px rgba(15, 118, 110, .1);
+        border-color: #166534;
+        box-shadow: 0 0 0 3px rgba(22, 101, 52, .12);
     }
 
     .field-hint {
@@ -86,7 +86,7 @@
     }
 
     .btn-primary-custom {
-        background: #0f766e;
+        background: #166534;
         color: #fff;
         border: none;
         border-radius: 8px;
@@ -96,7 +96,7 @@
     }
 
         .btn-primary-custom:hover {
-            background: #115e59;
+            background: #14532d;
             color: #fff;
         }
 
@@ -117,11 +117,11 @@
         }
 
     .information-note {
-        background: #f0fdfa;
-        border: 1px solid #99f6e4;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
         border-radius: 9px;
         padding: 14px 16px;
-        color: #115e59;
+        color: #14532d;
         font-size: 13px;
         margin-top: 25px;
     }
@@ -143,16 +143,14 @@
             <div class="d-flex align-items-center gap-2 mb-2">
                 <i class="bi bi-geo-alt fs-4"></i>
                 <span class="small text-uppercase fw-semibold">
-                    Borrower Profile Registration
+                    Applicant Profile Registration
                 </span>
             </div>
 
             <h2>Contact & Residence Details</h2>
 
             <p>
-                Provide your current contact information and residential address.
-                These details help us communicate with you and establish your place
-                of residence.
+                Your phone number and email are taken from your account. Provide your current residential address below.
             </p>
         </div>
 
@@ -180,18 +178,17 @@
                             Primary Phone Number <span class="text-danger">*</span>
                         </label>
 
-                        <input asp-for="PhoneNumber"
+                        <input id="PhoneNumber"
+                               value="@Model.PhoneNumber"
                                class="form-control"
                                type="tel"
-                               placeholder="e.g. 0712345678"
-                               autocomplete="tel" />
+                               autocomplete="tel"
+                               readonly />
 
                         <span asp-validation-for="PhoneNumber"
                               class="text-danger small"></span>
 
-                        <div class="field-hint">
-                            Use a phone number that you can access regularly.
-                        </div>
+                      
                     </div>
 
                     <div class="col-md-6">
@@ -218,18 +215,19 @@
                             Email Address <span class="text-danger">*</span>
                         </label>
 
-                        <input asp-for="Email"
+                        <input id="Email"
+                               value="@Model.Email"
                                class="form-control"
                                type="email"
-                               placeholder="example@email.com"
-                               autocomplete="email" />
+                               autocomplete="email"
+                               readonly />
 
                         <span asp-validation-for="Email"
                               class="text-danger small"></span>
 
-                        <div class="field-hint">
-                            Provide an email address you regularly use.
-                        </div>
+                        @* <div class="field-hint">
+                            Saved from your account. <a asp-area="Identity" asp-page="/Account/Manage/Index">Update it in account settings</a> if needed.
+                        </div> *@
                     </div>
 
                 </div>
@@ -246,9 +244,9 @@
                             County <span class="text-danger">*</span>
                         </label>
 
-                        <input asp-for="County"
-                               class="form-control"
-                               placeholder="e.g. Nairobi" />
+                        <select asp-for="County" class="form-select" disabled>
+                            <option value="">Loading counties...</option>
+                        </select>
 
                         <span asp-validation-for="County"
                               class="text-danger small"></span>
@@ -259,9 +257,9 @@
                             Sub-County <span class="text-danger">*</span>
                         </label>
 
-                        <input asp-for="SubCounty"
-                               class="form-control"
-                               placeholder="Enter your sub-county" />
+                        <select asp-for="SubCounty" class="form-select" disabled>
+                            <option value="">Select a county first</option>
+                        </select>
 
                         <span asp-validation-for="SubCounty"
                               class="text-danger small"></span>
@@ -272,9 +270,9 @@
                             Ward <span class="text-danger">*</span>
                         </label>
 
-                        <input asp-for="Ward"
-                               class="form-control"
-                               placeholder="Enter your ward" />
+                        <select asp-for="Ward" class="form-select" disabled>
+                            <option value="">Select a sub-county first</option>
+                        </select>
 
                         <span asp-validation-for="Ward"
                               class="text-danger small"></span>
@@ -320,13 +318,21 @@
                         <span asp-validation-for="PhysicalAddress"
                               class="text-danger small"></span>
 
-                        <div class="field-hint">
-                            Include useful location details such as building name,
-                            street, nearby landmark or plot number.
-                        </div>
+                       
                     </div>
 
                 </div>
+
+                <div id="kenya-location-data"
+                     data-url="@Url.Content("~/data/kenya-locations.json")"
+                     data-county="@Model.County"
+                     data-sub-county="@Model.SubCounty"
+                     data-ward="@Model.Ward"
+                     class="visually-hidden"></div>
+
+                <div id="location-load-error" class="alert alert-danger d-none" role="alert"></div>
+
+                
 
                 <div class="information-note">
                     <i class="bi bi-shield-check me-2"></i>
@@ -345,7 +351,7 @@
                         Back
                     </a>
 
-                    <button type="submit" class="btn-primary-custom">
+                    <button id="step2-submit" type="submit" class="btn-primary-custom" disabled>
                         Save & Continue
                         <i class="bi bi-arrow-right ms-1"></i>
                     </button>
@@ -360,4 +366,73 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (async function () {
+            const dataElement = document.getElementById("kenya-location-data");
+            const countySelect = document.getElementById("County");
+            const subCountySelect = document.getElementById("SubCounty");
+            const wardSelect = document.getElementById("Ward");
+            const submitButton = document.getElementById("step2-submit");
+            const errorElement = document.getElementById("location-load-error");
+
+            function populate(select, items, placeholder, selectedValue) {
+                select.replaceChildren(new Option(placeholder, ""));
+                for (const item of items) {
+                    const name = typeof item === "string" ? item : item.name;
+                    select.add(new Option(name, name));
+                }
+                if (selectedValue && Array.from(select.options).some(option => option.value === selectedValue)) {
+                    select.value = selectedValue;
+                }
+            }
+
+            try {
+                const response = await fetch(dataElement.dataset.url);
+                if (!response.ok) {
+                    throw new Error(`Location data request failed with status ${response.status}.`);
+                }
+
+                const data = await response.json();
+                if (!Array.isArray(data.counties) || data.counties.length === 0) {
+                    throw new Error("Location data does not contain any counties.");
+                }
+
+                const counties = data.counties;
+                const selectedCounty = dataElement.dataset.county;
+                const selectedSubCounty = dataElement.dataset.subCounty;
+                const selectedWard = dataElement.dataset.ward;
+
+                function updateWards(selectedValue = "") {
+                    const county = counties.find(item => item.name === countySelect.value);
+                    const subCounty = county?.subCounties.find(item => item.name === subCountySelect.value);
+                    populate(wardSelect, subCounty ? subCounty.wards : [], "Select a ward", selectedValue);
+                    wardSelect.disabled = !subCounty;
+                }
+
+                function updateSubCounties(selectedValue = "") {
+                    const county = counties.find(item => item.name === countySelect.value);
+                    populate(subCountySelect, county ? county.subCounties : [], "Select a sub-county", selectedValue);
+                    subCountySelect.disabled = !county;
+                    updateWards();
+                }
+
+                populate(countySelect, counties, "Select a county", selectedCounty);
+                countySelect.disabled = false;
+                updateSubCounties(selectedSubCounty);
+                updateWards(selectedWard);
+
+                countySelect.addEventListener("change", () => updateSubCounties());
+                subCountySelect.addEventListener("change", () => updateWards());
+                submitButton.disabled = false;
+            } catch (error) {
+                console.error("Unable to load Kenya location options.", error);
+                errorElement.textContent = "County and sub-county options could not be loaded. Please refresh the page or try again later.";
+                errorElement.classList.remove("d-none");
+                countySelect.disabled = true;
+                subCountySelect.disabled = true;
+                wardSelect.disabled = true;
+                submitButton.disabled = true;
+            }
+        })();
+    </script>
 }

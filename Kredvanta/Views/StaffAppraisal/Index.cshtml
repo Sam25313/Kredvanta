@@ -1,0 +1,201 @@
+﻿@using static Kredvanta.Models.Enums.LendingEnums
+@model Kredvanta.ViewModels.Staff.AppraisalPage
+@{
+    ViewData["Title"] = "Appraisal " + Model.ApplicationNumber;
+    //Layout = User.IsInRole("Administrator") ? "_AdminLayout" : "_Layout";
+    var p = Model.Preview;
+    
+}
+@{
+    Layout = "_StaffLayout";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Credit appraisal: @Model.ApplicationNumber</h2>
+            <span class="badge bg-secondary">@Model.Status</span>
+            <span class="text-muted ms-2">@Model.BorrowerName · @Model.ProductName · KES @Model.Amount.ToString("N2") · @Model.Term periods</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary" asp-controller="StaffVerification" asp-action="Case" asp-route-applicationId="@Model.ApplicationId">Verification</a>
+            <a class="btn btn-outline-secondary" asp-controller="StaffApplications" asp-action="Details" asp-route-id="@Model.ApplicationId">Application</a>
+        </div>
+    </div>
+
+    @if (!p.Ready)
+    {
+        <div class="alert alert-warning">@p.BlockReason</div>
+    }
+    else
+    {
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold">Inputs</h5>
+                        <dl class="row mb-0">
+                            <dt class="col-6 text-muted">Policy</dt>
+                            <dd class="col-6">v@p.PolicyVersion, @p.PolicyName</dd>
+                            <dt class="col-6 text-muted">Verified net income</dt>
+                            <dd class="col-6">KES @p.VerifiedNetIncome?.ToString("N2")</dd>
+                            <dt class="col-6 text-muted">Declared net income</dt>
+                            <dd class="col-6">KES @(p.DeclaredNetIncome?.ToString("N2") ?? "—")</dd>
+                            <dt class="col-6 text-muted">Regular instalment</dt>
+                            <dd class="col-6">KES @p.RegularInstalment.ToString("N2")</dd>
+                            <dt class="col-6 text-muted">Monthly equivalent</dt>
+                            <dd class="col-6">KES @p.MonthlyEquivalent.ToString("N2")</dd>
+                            <dt class="col-6 text-muted">Total interest</dt>
+                            <dd class="col-6">KES @p.TotalInterest.ToString("N2")</dd>
+                            <dt class="col-6 text-muted">Total repayable</dt>
+                            <dd class="col-6">KES @p.TotalRepayable.ToString("N2")</dd>
+                            <dt class="col-6 text-muted">Processing fee</dt>
+                            <dd class="col-6">KES @p.ProcessingFee.ToString("N2")</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold">Affordability (with the figures entered)</h5>
+                        @if (p.Affordability is { } a)
+                        {
+                            <dl class="row mb-2">
+                                <dt class="col-6 text-muted">Disposable before instalment</dt>
+                                <dd class="col-6">KES @a.DisposableBefore.ToString("N2")</dd>
+                                <dt class="col-6 text-muted">Disposable after instalment</dt>
+                                <dd class="col-6">KES @a.DisposableAfter.ToString("N2")</dd>
+                                <dt class="col-6 text-muted">Debt service ratio</dt>
+                                <dd class="col-6">@a.DebtServiceRatio.ToString("P1")</dd>
+                                <dt class="col-6 text-muted">Policy result</dt>
+                                <dd class="col-6"><span class="badge @(a.Passes ? "bg-success" : "bg-danger")">@(a.Passes ? "Passes" : "Fails")</span></dd>
+                            </dl>
+                            @foreach (var f in a.Failures)
+                            {
+                                <div class="small text-danger">@f</div>
+                            }
+                        }
+                        @foreach (var f in p.Flags)
+                        {
+                            <div class="alert alert-warning py-1 px-2 small mt-2 mb-0">⚑ @f</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.CanAssess)
+        {
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-1">Obligations from the statements</h5>
+                    <p class="small text-muted">Take these from the verified bank and M-Pesa statements and payslips. Do not estimate.</p>
+
+                    <form method="get" asp-action="Index" asp-route-applicationId="@Model.ApplicationId" class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Existing loan repayments / month</label>
+                            <input type="number" step="0.01" min="0" name="existing" value="@Model.Input.ExistingMonthlyLoanPayments" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Other obligations / month</label>
+                            <input type="number" step="0.01" min="0" name="other" value="@Model.Input.OtherMonthlyObligations" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Living expenses / month</label>
+                            <input type="number" step="0.01" min="0" name="expenses" value="@Model.Input.MonthlyExpenses" class="form-control" />
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end"><button class="btn btn-outline-primary">Recalculate</button></div>
+                    </form>
+
+                    <form method="post" asp-action="Assess" asp-route-applicationId="@Model.ApplicationId" class="row g-3">
+                        <input type="hidden" name="ExistingMonthlyLoanPayments" value="@Model.Input.ExistingMonthlyLoanPayments" />
+                        <input type="hidden" name="OtherMonthlyObligations" value="@Model.Input.OtherMonthlyObligations" />
+                        <input type="hidden" name="MonthlyExpenses" value="@Model.Input.MonthlyExpenses" />
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="RecommendWithConditions" value="true" id="cond" />
+                                <label class="form-check-label" for="cond">Recommend with conditions (describe them in the notes)</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Notes (required if there are risk flags or conditions)</label>
+                            <textarea name="Notes" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="col-12"><button class="btn btn-primary">Record assessment</button></div>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+
+    @if (Model.Current is { } c)
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="fw-bold">Current assessment</h5>
+                @if (c.Stale)
+                {
+                    <div class="alert alert-danger py-1">The amount or term changed after this assessment. Reassess.</div>
+                }
+                <dl class="row mb-2">
+                    <dt class="col-3 text-muted">Recommendation</dt>
+                    <dd class="col-9"><span class="badge bg-secondary">@c.Recommendation</span></dd>
+                    <dt class="col-3 text-muted">Income used</dt>
+                    <dd class="col-9">KES @c.Income.ToString("N2")</dd>
+                    <dt class="col-3 text-muted">Monthly instalment</dt>
+                    <dd class="col-9">KES @c.Instalment.ToString("N2")</dd>
+                    <dt class="col-3 text-muted">Debt service ratio</dt>
+                    <dd class="col-9">@c.Ratio.ToString("P1")</dd>
+                    <dt class="col-3 text-muted">Assessed</dt>
+                    <dd class="col-9">@c.AssessedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")</dd>
+                    @if (!string.IsNullOrWhiteSpace(c.Flags))
+                    {
+                        <dt class="col-3 text-muted">Risk flags</dt>
+                        <dd class="col-9">@c.Flags</dd>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(c.Notes))
+                    {
+                        <dt class="col-3 text-muted">Notes</dt>
+                        <dd class="col-9">@c.Notes</dd>
+                    }
+                </dl>
+
+                @if (Model.CanRecommend)
+                {
+                    <form method="post" asp-action="Recommend" asp-route-applicationId="@Model.ApplicationId" class="d-flex gap-2">
+                        <input name="notes" class="form-control" placeholder="Recommendation note (optional)" />
+                        <button class="btn btn-success text-nowrap">Recommend to credit manager</button>
+                    </form>
+                    <div class="small text-muted mt-1">A recommendation is not approval. A credit manager decides.</div>
+                }
+            </div>
+        </div>
+    }
+
+    @if (p.Ready)
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold">Indicative schedule</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light"><tr><th class="ps-3">#</th><th>Due</th><th>Principal</th><th>Interest</th><th>Total</th><th>Balance</th></tr></thead>
+                    <tbody>
+                        @foreach (var l in p.Schedule)
+                        {
+                            <tr>
+                                <td class="ps-3">@l.Number</td>
+                                <td>@l.DueDate.ToString("dd MMM yyyy")</td>
+                                <td>@l.Principal.ToString("N2")</td>
+                                <td>@l.Interest.ToString("N2")</td>
+                                <td>@l.Total.ToString("N2")</td>
+                                <td>@l.Balance.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

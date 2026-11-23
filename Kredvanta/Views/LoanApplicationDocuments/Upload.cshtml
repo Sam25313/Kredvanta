@@ -1,219 +1,405 @@
-﻿@model Kredvanta.ViewModels.LoanApplications.UploadLoanApplicationDocumentViewModel
+﻿@using Kredvanta.ViewModels.LoanApplications
+@using static Kredvanta.Models.Enums.LendingEnums
+@model Kredvanta.ViewModels.LoanApplications.UploadLoanApplicationDocumentViewModel
 
+@functions {
+    // What the applicant sees for each requirement, based on review and screening state.
+    static (string Icon, string Tone, string Text) Describe(UploadedDocumentSummary? current)
+    {
+        if (current is null)
+            return ("bi-cloud-arrow-up", "text-muted", "Not uploaded yet");
+
+        return current.ReviewStatus switch
+        {
+            DocumentReviewStatus.Verified =>
+                ("bi-check-circle-fill", "text-success", "Verified by our team"),
+            DocumentReviewStatus.Rejected =>
+                ("bi-x-circle-fill", "text-danger", "Rejected. Upload a new file."),
+            DocumentReviewStatus.ClarificationRequired =>
+                ("bi-exclamation-triangle-fill", "text-warning-emphasis", "We need more information. Upload a new file."),
+            _ => current.ScreeningStatus switch
+            {
+                DocumentScreeningStatus.Queued or DocumentScreeningStatus.Scanning =>
+                    ("bi-hourglass-split", "text-primary", "Being checked"),
+                DocumentScreeningStatus.Flagged or DocumentScreeningStatus.Failed =>
+                    ("bi-exclamation-triangle-fill", "text-warning-emphasis",
+                     "Uploaded. We couldn't confirm everything automatically, so a loan officer will review it."),
+                _ =>
+                    ("bi-file-earmark-check-fill", "text-primary", "Uploaded and waiting for review")
+            }
+        };
+    }
+}
 
 @{
-    ViewData["Title"] = "Upload Loan Application Document";
+    ViewData["Title"] = "Upload documents";
+
+    var required = Model.RequiredDocuments.Where(d => d.IsMandatory).ToList();
+
+    // Matches RequiredDocumentsGuard: a requirement counts once its current file is Pending or Verified.
+    var provided = required.Count(d => d.Current is
+    {
+        ReviewStatus: DocumentReviewStatus.Pending or DocumentReviewStatus.Verified
+    });
+
+    var needNewFile = Model.RequiredDocuments.Count(d => d.Current is
+    {
+        ReviewStatus: DocumentReviewStatus.Rejected or DocumentReviewStatus.ClarificationRequired
+    });
+
+    var percent = required.Count == 0 ? 100 : (int)Math.Round(provided * 100.0 / required.Count);
+    var errors = ViewData.ModelState.Values
+        .SelectMany(v => v.Errors)
+        .Select(e => e.ErrorMessage)
+        .Where(m => !string.IsNullOrWhiteSpace(m))
+        .Distinct()
+        .ToList();
 }
+
+<style>
+    .slot-list {
+        border: 1px solid var(--bs-border-color);
+        border-radius: .75rem;
+        overflow: hidden;
+        background: var(--bs-body-bg);
+    }
+
+    .slot {
+        position: relative;
+        display: grid;
+        grid-template-columns: 2rem 1fr auto;
+        column-gap: 1rem;
+        align-items: center;
+        margin: 0;
+        padding: 1.1rem 1.25rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        transition: background-color .15s ease;
+    }
+
+        .slot:last-child {
+            border-bottom: 0;
+        }
+
+        .slot:hover {
+            background: var(--bs-tertiary-bg);
+        }
+
+    /* The whole row is the click and drop target. */
+    .slot-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .slot:focus-within {
+        outline: 2px solid var(--bs-primary);
+        outline-offset: -2px;
+    }
+
+    .slot.is-dragover {
+        background: var(--bs-primary-bg-subtle);
+        outline: 2px dashed var(--bs-primary);
+        outline-offset: -8px;
+    }
+
+    .slot-icon {
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+
+    .slot-action {
+        white-space: nowrap;
+    }
+
+        .slot-action .btn {
+            pointer-events: none;
+        }
+
+        .slot-action noscript button {
+            position: relative;
+            z-index: 2;
+            pointer-events: auto;
+        }
+
+    /* The one moving detail: a bar sweeps along the row while its file uploads. */
+    .slot.is-uploading {
+        background: var(--bs-tertiary-bg);
+    }
+
+        .slot.is-uploading .slot-input {
+            cursor: progress;
+        }
+
+        .slot.is-uploading::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 3px;
+            width: 35%;
+            background: var(--bs-primary);
+            animation: slot-sweep 1.2s ease-in-out infinite;
+        }
+
+    @@keyframes slot-sweep {
+        from {
+            transform: translateX(-100%);
+        }
+
+        to {
+            transform: translateX(290%);
+        }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .slot.is-uploading::after {
+            animation: none;
+            width: 100%;
+            opacity: .5;
+        }
+
+        .slot {
+            transition: none;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .slot {
+            grid-template-columns: 2rem 1fr;
+            row-gap: .75rem;
+        }
+
+        .slot-action {
+            grid-column: 2;
+        }
+    }
+</style>
 
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
 
-            <!-- Page heading -->
-            <div class="mb-4">
-                <a asp-controller="LoanApplications"
-                   asp-action="Details"
-                   asp-route-id="@Model.LoanApplicationId"
-                   class="text-decoration-none text-muted">
-                    <i class="bi bi-arrow-left me-1"></i>
-                    Back to Application
-                </a>
+            <a asp-controller="LoanApplications"
+               asp-action="Details"
+               asp-route-id="@Model.LoanApplicationId"
+               class="text-decoration-none text-muted d-inline-flex align-items-center gap-1 mb-3">
+                <i class="bi bi-arrow-left"></i>
+                Back to application
+            </a>
 
-                <h2 class="fw-bold mt-3 mb-2">
-                    Upload Supporting Documents
-                </h2>
+            <h1 class="h3 fw-bold mb-1">Upload your documents</h1>
+            <p class="text-muted mb-4">
+                Application @Model.ApplicationNumber for @Model.LoanProductName
+            </p>
 
-                <p class="text-muted">
-                    Upload the documents required to support your loan application.
-                </p>
-            </div>
-
-            <!-- Application information -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body p-4">
-                    <div class="row">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <small class="text-muted d-block">
-                                Application Number
-                            </small>
-                            <strong>@Model.ApplicationNumber</strong>
-                        </div>
-
-                        <div class="col-md-6">
-                            <small class="text-muted d-block">
-                                Loan Product
-                            </small>
-                            <strong>@Model.LoanProductName</strong>
-                        </div>
-                    </div>
+            @if (errors.Count > 0)
+            {
+                <div class="alert alert-danger" role="alert">
+                    <ul class="mb-0 ps-3">
+                        @foreach (var message in errors)
+                        {
+                            <li>@message</li>
+                        }
+                    </ul>
                 </div>
-            </div>
+            }
 
-            <!-- Upload form -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
+            @if (required.Count > 0)
+            {
+                <div class="mb-4">
+                    <div class="fw-semibold mb-1">
+                        @provided of @required.Count required documents provided
+                    </div>
+                    <div class="progress" style="height:.5rem"
+                         role="progressbar"
+                         aria-label="Required documents provided"
+                         aria-valuenow="@percent" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar @(provided == required.Count ? "bg-success" : "")"
+                             style="width:@percent%"></div>
+                    </div>
 
-                    <h5 class="fw-bold mb-3">
-                        Document Information
-                    </h5>
+                    @if (needNewFile > 0)
+                    {
+                        <p class="small text-warning-emphasis mt-2 mb-0">
+                            @(needNewFile == 1 ? "1 document needs" : $"{needNewFile} documents need") a new file.
+                        </p>
+                    }
+                    else if (provided == required.Count)
+                    {
+                        <p class="small text-success mt-2 mb-0">
+                            Everything required is in. Go back to your application to submit it.
+                        </p>
+                    }
+                </div>
+            }
 
-                    <form asp-controller="LoanApplicationDocuments"
-                          asp-action="Upload"
-                          method="post"
-                          enctype="multipart/form-data">
+            @if (!Model.RequiredDocuments.Any())
+            {
+                <div class="alert alert-secondary">
+                    No documents are required for this loan product.
+                </div>
+            }
+            else
+            {
+                <div class="slot-list">
+                    @foreach (var d in Model.RequiredDocuments)
+                    {
+                        var (icon, tone, text) = Describe(d.Current);
+                        var hasFile = d.Current is not null;
+                        var officerNote = d.Current is
+                        {
+                            ReviewStatus: DocumentReviewStatus.Rejected or DocumentReviewStatus.ClarificationRequired
+                        } ? d.Current.ReviewComments : null;
 
-                        @Html.AntiForgeryToken()
+                        <form asp-controller="LoanApplicationDocuments"
+                              asp-action="Upload"
+                              method="post"
+                              enctype="multipart/form-data"
+                              class="slot"
+                              data-slot>
 
-                        <input type="hidden"
-                               asp-for="LoanApplicationId" />
+                            <input type="hidden" name="LoanApplicationId" value="@Model.LoanApplicationId" />
+                            <input type="hidden" name="LoanProductRequiredDocumentId" value="@d.Id" />
 
-                        <div asp-validation-summary="ModelOnly"
-                             class="alert alert-danger"
-                             role="alert">
-                        </div>
+                            <input type="file"
+                                   name="File"
+                                   class="slot-input"
+                                   accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                   aria-label="@(hasFile ? "Replace" : "Upload") @d.DocumentName" />
 
-                        <!-- Document type -->
-                        <div class="mb-4">
-                            <label asp-for="LoanProductRequiredDocumentId"
-                                   class="form-label fw-semibold">
-                                Document Type
-                            </label>
+                            <i class="bi @icon @tone slot-icon" aria-hidden="true"></i>
 
-                            <select asp-for="LoanProductRequiredDocumentId"
-                                    class="form-select"
-                                    id="documentType">
+                            <div class="slot-body">
+                                <div class="fw-semibold">
+                                    @d.DocumentName
+                                    <span class="badge rounded-pill text-bg-light border fw-normal ms-1">
+                                        @(d.IsMandatory ? "Required" : "Optional")
+                                    </span>
+                                </div>
 
-                                <option value="">
-                                    -- Select document type --
-                                </option>
-
-                                @if (Model.RequiredDocuments.Any())
+                                @if (!string.IsNullOrWhiteSpace(d.Description))
                                 {
-                                    @foreach (var document in Model.RequiredDocuments)
-                                    {
-                                        <option value="@document.Id">
-                                            @document.DocumentName
-                                            @(document.IsMandatory ? "(Required)" : "(Optional)")
-                                        </option>
-                                    }
+                                    <div class="small text-muted">@d.Description</div>
+                                }
+
+                                @if (d.RequiredPeriodMonths.HasValue)
+                                {
+                                    <div class="small text-muted">Must cover @d.RequiredPeriodMonths months.</div>
+                                }
+
+                                <div class="small mt-1 @tone" data-status>@text</div>
+
+                                @if (d.Current is not null)
+                                {
+                                    <div class="small text-muted">
+                                        @d.Current.OriginalFileName, uploaded @d.Current.UploadedAt.ToString("dd MMM yyyy")@(d.Current.Version > 1 ? $", version {d.Current.Version}" : "")
+                                    </div>
                                 }
                                 else
                                 {
-                                    <option value="" disabled>
-                                        No document requirements are available for this loan product.
-                                    </option>
+                                    <div class="small text-muted d-none d-md-block">
+                                        Drop a file here or click to browse.
+                                    </div>
                                 }
-                            </select>
 
-                            <span asp-validation-for="LoanProductRequiredDocumentId"
-                                  class="text-danger small">
-                            </span>
+                                @if (!string.IsNullOrWhiteSpace(officerNote))
+                                {
+                                    <div class="small mt-2 p-2 rounded bg-body-secondary">
+                                        Note from our team: @officerNote
+                                    </div>
+                                }
 
-                            <div class="form-text">
-                                Select the document type that matches the file you are uploading.
+                                <div class="small text-danger mt-1 d-none" data-error role="alert"></div>
                             </div>
-                        </div>
 
-                        <!-- Document requirements -->
-                        @if (Model.RequiredDocuments.Any())
-                        {
-                            <div class="bg-light rounded p-3 mb-4">
-                                <h6 class="fw-semibold mb-2">
-                                    Required documents for this loan
-                                </h6>
-
-                                <ul class="mb-0 ps-3">
-                                    @foreach (var document in Model.RequiredDocuments)
-                                    {
-                                        <li class="mb-2">
-                                            <strong>@document.DocumentName</strong>
-
-                                            @if (document.IsMandatory)
-                                            {
-                                                <span class="badge bg-danger ms-1">
-                                                    Mandatory
-                                                </span>
-                                            }
-                                            else
-                                            {
-                                                <span class="badge bg-secondary ms-1">
-                                                    Optional
-                                                </span>
-                                            }
-
-                                            @if (!string.IsNullOrWhiteSpace(document.Description))
-                                            {
-                                                <div class="small text-muted">
-                                                    @document.Description
-                                                </div>
-                                            }
-
-                                            @if (document.RequiredPeriodMonths.HasValue)
-                                            {
-                                                <div class="small text-muted">
-                                                    Period required:
-                                                    @document.RequiredPeriodMonths months
-                                                </div>
-                                            }
-                                        </li>
-                                    }
-                                </ul>
+                            <div class="slot-action">
+                                <span class="btn btn-sm @(hasFile ? "btn-outline-secondary" : "btn-primary")">
+                                    @(hasFile ? "Replace" : "Choose file")
+                                </span>
+                                <noscript>
+                                    <button type="submit" class="btn btn-sm btn-primary">Upload</button>
+                                </noscript>
                             </div>
-                        }
-
-                        <!-- File selection -->
-                        <div class="mb-4">
-                            <label asp-for="File"
-                                   class="form-label fw-semibold">
-                                Select Document
-                            </label>
-
-                            <input asp-for="File"
-                                   type="file"
-                                   class="form-control"
-                                   accept=".pdf,.jpg,.jpeg,.png" />
-
-                            <span asp-validation-for="File"
-                                  class="text-danger small">
-                            </span>
-
-                            <div class="form-text">
-                                Accepted formats: PDF, JPG, JPEG and PNG.
-                                Maximum file size: 10 MB.
-                            </div>
-                        </div>
-
-                        <!-- Security notice -->
-                        <div class="alert alert-info border-0">
-                            <i class="bi bi-shield-lock me-2"></i>
-                            Your uploaded documents are stored securely and
-                            are accessible only to authorised personnel.
-                        </div>
-
-                        <!-- Buttons -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a asp-controller="LoanApplications"
-                               asp-action="Details"
-                               asp-route-id="@Model.LoanApplicationId"
-                               class="btn btn-outline-secondary">
-                                Cancel
-                            </a>
-
-                            <button type="submit"
-                                    class="btn btn-primary px-4">
-                                <i class="bi bi-cloud-arrow-up me-2"></i>
-                                Upload Document
-                            </button>
-                        </div>
-
-                    </form>
+                        </form>
+                    }
                 </div>
-            </div>
+            }
+
+            <p class="small text-muted mt-3 mb-1">
+                PDF, JPG or PNG, up to 5 MB each. Phone photos are fine if the text is sharp and every
+                edge of the document is in view.
+            </p>
+            <p class="small text-muted mb-1">
+                After you upload, we compare each file with the details in your profile. A loan officer
+                reviews everything before any decision is made.
+            </p>
+            <p class="small text-muted">
+                <i class="bi bi-shield-lock me-1"></i>
+                Only authorised staff can open your documents.
+            </p>
 
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const MAX_BYTES = 5 * 1024 * 1024;
+            const ALLOWED = ['pdf', 'jpg', 'jpeg', 'png'];
+
+            function setError(slot, message) {
+                const el = slot.querySelector('[data-error]');
+                el.textContent = message;
+                el.classList.toggle('d-none', !message);
+            }
+
+            document.querySelectorAll('[data-slot]').forEach(function (slot) {
+                const input = slot.querySelector('.slot-input');
+                const status = slot.querySelector('[data-status]');
+
+                ['dragenter', 'dragover'].forEach(function (name) {
+                    input.addEventListener(name, function () { slot.classList.add('is-dragover'); });
+                });
+                ['dragleave', 'drop'].forEach(function (name) {
+                    input.addEventListener(name, function () { slot.classList.remove('is-dragover'); });
+                });
+
+                input.addEventListener('change', function () {
+                    setError(slot, '');
+                    const file = input.files && input.files[0];
+                    if (!file) return;
+
+                    const ext = (file.name.split('.').pop() || '').toLowerCase();
+                    let problem = '';
+                    if (!ALLOWED.includes(ext)) problem = 'Use a PDF, JPG or PNG file.';
+                    else if (file.size === 0) problem = 'This file is empty. Choose another one.';
+                    else if (file.size > MAX_BYTES) problem = 'This file is larger than 5 MB. Choose a smaller file or a lower-resolution photo.';
+
+                    if (problem) {
+                        input.value = '';
+                        setError(slot, problem);
+                        return;
+                    }
+
+                    slot.classList.add('is-uploading');
+                    status.textContent = 'Uploading ' + file.name + '…';
+
+                    // One upload at a time: lock the other rows, then send this one.
+                    document.querySelectorAll('.slot-input').forEach(function (other) {
+                        if (other !== input) other.disabled = true;
+                    });
+                    slot.submit();
+                });
+            });
+
+            // Coming back with the browser's Back button should not show a stuck "Uploading" row.
+            window.addEventListener('pageshow', function (e) {
+                if (e.persisted) window.location.reload();
+            });
+        })();
+    </script>
 }

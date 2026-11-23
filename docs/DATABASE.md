@@ -4,7 +4,7 @@
 
 Kredvanta uses Microsoft SQL Server as its relational database management system and Entity Framework Core as its Object-Relational Mapper (ORM).
 
-The database supports borrower management, loan products, loan applications, credit assessment, loan processing, disbursements, repayments, notifications and audit logging.
+The database supports applicant management, loan products, loan applications, credit assessment, loan processing, disbursements, repayments, notifications and audit logging.
 
 Database operations are managed through `ApplicationDbContext`, which inherits from `IdentityDbContext<ApplicationUser>`.
 
@@ -23,11 +23,11 @@ Database operations are managed through `ApplicationDbContext`, which inherits f
 
 The application currently defines 18 application DbSets, organised into six functional areas.
 
-### 3.1 Borrower Management
+### 3.1 Applicant Records
 
 | Entity | Description |
 |---|---|
-| Borrower | Stores borrower personal, identification, contact, residential, employment and financial information. |
+| Borrower | Stores applicant personal, identification, contact, residential, employment and financial information. |
 | Guarantor | Stores guarantor information, including names, identification numbers and contact details. |
 
 ### 3.2 Loan Products
@@ -41,8 +41,8 @@ The application currently defines 18 application DbSets, organised into six func
 
 | Entity | Description |
 |---|---|
-| BorrowerVerificationDocument | Stores borrower verification document metadata. |
-| LoanApplication | Stores loan requests submitted by borrowers. |
+| BorrowerVerificationDocument | Stores applicant verification document metadata. |
+| LoanApplication | Stores loan requests submitted by applicants. |
 | LoanApplicationDocument | Stores metadata for documents submitted with loan applications. |
 | LoanApplicationGuarantor | Associates guarantors with loan applications. |
 | CreditAssessment | Stores financial information and credit assessment results. |
@@ -97,7 +97,7 @@ The application also extends user information with additional properties such as
 
 The following relationships are configured in `ApplicationDbContext`.
 
-### Borrower Management
+### Applicant Relationships (Borrower entity)
 
 - ApplicationUser to Borrower: One-to-one.
 - Borrower to LoanApplication: One-to-many.
@@ -223,12 +223,12 @@ Loan product and loan financial rules include:
 
 Additional indexes support common lookup and operational queries, including:
 
-- Borrower phone number.
-- Borrower and loan application status.
+- Applicant phone number.
+- Applicant and loan application status.
 - Loan application status history dates.
 - User notification read status.
 - Audit log action dates.
-- Borrower verification document types.
+- Applicant verification document types.
 
 ## 8. Referential Integrity and Delete Behaviours
 
@@ -290,7 +290,7 @@ Database security considerations include:
 - Restricted database access.
 - Authentication and role-based authorization.
 - Secure storage of uploaded documents.
-- Protection of borrower identification and financial information.
+- Protection of applicant identification and financial information.
 - Audit logging of important operations.
 - Regular database backups.
 - Controlled access to financial records.

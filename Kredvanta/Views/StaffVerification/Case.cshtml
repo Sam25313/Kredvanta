@@ -1,0 +1,207 @@
+@using Kredvanta.Models.Enums
+@using static Kredvanta.Models.Enums.LendingEnums
+@model Kredvanta.ViewModels.Staff.VerificationCase
+
+@{
+	ViewData["Title"] = "Verification " + Model.ApplicationNumber;
+	//Layout = User.IsInRole("Administrator") ? "_AdminLayout" : "_Layout";
+}
+@{
+	Layout = "_StaffLayout";
+}
+
+<div class="container-fluid py-4">
+	<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+		<div>
+			<span class="text-muted small">VERIFICATION CASE</span>
+			<h2 class="fw-bold mb-1">@Model.ApplicationNumber</h2>
+			<span class="badge bg-secondary">@Model.Status</span>
+		</div>
+		<a asp-action="Index" class="btn btn-outline-secondary">Back to verification queue</a>
+	</div>
+
+	@foreach (var (key, css) in new[] { ("Success", "success"), ("Error", "danger") })
+	{
+		if (TempData[key] != null)
+		{
+			<div class="alert alert-@css">@TempData[key]</div>
+		}
+	}
+
+	<div class="card border-0 shadow-sm mb-4">
+		<div class="card-body">
+			<h5 class="fw-bold">Applicant identity and employment</h5>
+			<dl class="row mb-0">
+				<dt class="col-sm-3">Applicant</dt>
+				<dd class="col-sm-9">@Model.BorrowerName</dd>
+				<dt class="col-sm-3">National ID</dt>
+				<dd class="col-sm-9">@Model.NationalId</dd>
+				<dt class="col-sm-3">Date of birth</dt>
+				<dd class="col-sm-9">@Model.DateOfBirth.ToString("dd MMM yyyy")</dd>
+				<dt class="col-sm-3">KYC status</dt>
+				<dd class="col-sm-9">@Model.KycStatus</dd>
+				<dt class="col-sm-3">Employer</dt>
+				<dd class="col-sm-9">@Model.Employer</dd>
+				<dt class="col-sm-3">Job title</dt>
+				<dd class="col-sm-9">@Model.JobTitle</dd>
+				<dt class="col-sm-3">Contract</dt>
+				<dd class="col-sm-9">@Model.ContractType</dd>
+				<dt class="col-sm-3">Start date</dt>
+				<dd class="col-sm-9">@(Model.StartDate?.ToString("dd MMM yyyy") ?? "Not provided")</dd>
+				<dt class="col-sm-3">Declared net salary</dt>
+				<dd class="col-sm-9">@(Model.NetSalary?.ToString("N2") ?? "Not provided")</dd>
+			</dl>
+		</div>
+	</div>
+
+	<div class="row g-4 mb-4">
+		@if (Model.CanDoKyc)
+		{
+			<div class="col-lg-6">
+				<div class="card border-0 shadow-sm h-100">
+					<div class="card-body">
+						<h5 class="fw-bold">Record KYC decision</h5>
+						<form asp-action="Kyc" asp-route-applicationId="@Model.ApplicationId" method="post">
+							<div class="mb-3">
+								<label class="form-label" for="kycOutcome">Outcome</label>
+								<select id="kycOutcome" name="outcome" class="form-select" required>
+									<option value="@((int)KycStatus.Verified)">Verified</option>
+									<option value="@((int)KycStatus.Rejected)">Rejected</option>
+									<option value="@((int)KycStatus.Escalated)">Escalated</option>
+								</select>
+							</div>
+							<div class="form-check mb-2">
+								<input class="form-check-input" type="checkbox" name="identityMatchesProfile" value="true" id="identityMatchesProfile" />
+								<label class="form-check-label" for="identityMatchesProfile">Identity matches the applicant profile</label>
+							</div>
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="checkbox" name="documentsAppearGenuine" value="true" id="documentsAppearGenuine" />
+								<label class="form-check-label" for="documentsAppearGenuine">Documents appear genuine</label>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="reasonCode">Reason code</label>
+								<input class="form-control" id="reasonCode" name="reasonCode" maxlength="100" />
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="kycNotes">Notes</label>
+								<textarea class="form-control" id="kycNotes" name="notes" rows="3"></textarea>
+							</div>
+							<button class="btn btn-primary" type="submit">Save KYC decision</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		}
+
+		@if (Model.CanDoEmployment)
+		{
+			<div class="col-lg-6">
+				<div class="card border-0 shadow-sm h-100">
+					<div class="card-body">
+						<h5 class="fw-bold">Record employment verification</h5>
+						<form asp-action="Employment" asp-route-applicationId="@Model.ApplicationId" method="post">
+							<div class="mb-3">
+								<label class="form-label" for="channel">Contact channel</label>
+								<select id="channel" name="Channel" class="form-select" asp-items="Html.GetEnumSelectList<VerificationChannel>()"></select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="contactedParty">Contacted party</label>
+								<input class="form-control" id="contactedParty" name="ContactedParty" required maxlength="200" />
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="contactPersonName">Contact person</label>
+								<input class="form-control" id="contactPersonName" name="ContactPersonName" maxlength="200" />
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="contactDetailUsed">Contact detail used</label>
+								<input class="form-control" id="contactDetailUsed" name="ContactDetailUsed" required maxlength="200" />
+							</div>
+							<div class="form-check mb-3">
+								<input class="form-check-input" type="checkbox" name="ContactIndependentlySourced" value="true" id="contactIndependentlySourced" />
+								<label class="form-check-label" for="contactIndependentlySourced">Contact details were sourced independently</label>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="employmentOutcome">Outcome</label>
+								<select id="employmentOutcome" name="Outcome" class="form-select" required>
+									<option value="@((int)EmploymentVerificationOutcome.ContactAttempted)">Contact attempted</option>
+									<option value="@((int)EmploymentVerificationOutcome.Verified)">Verified</option>
+									<option value="@((int)EmploymentVerificationOutcome.NotVerified)">Not verified</option>
+									<option value="@((int)EmploymentVerificationOutcome.Escalated)">Escalated</option>
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="confirmedJobTitle">Confirmed job title</label>
+								<input class="form-control" id="confirmedJobTitle" name="ConfirmedJobTitle" maxlength="150" />
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="confirmedContractType">Confirmed contract type</label>
+								<select id="confirmedContractType" name="ConfirmedContractType" class="form-select" asp-items="Html.GetEnumSelectList<EmploymentContractType>()">
+									<option value="">Not confirmed</option>
+								</select>
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="confirmedStartDate">Confirmed start date</label>
+								<input class="form-control" id="confirmedStartDate" name="ConfirmedStartDate" type="date" />
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="confirmedNetSalary">Confirmed net salary</label>
+								<input class="form-control" id="confirmedNetSalary" name="ConfirmedNetSalary" type="number" min="0.01" step="0.01" />
+							</div>
+							<div class="mb-3">
+								<label class="form-label" for="employmentNotes">Notes</label>
+								<textarea class="form-control" id="employmentNotes" name="Notes" rows="3"></textarea>
+							</div>
+							<button class="btn btn-primary" type="submit">Save verification attempt</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+
+	<div class="row g-4">
+		<div class="col-lg-6">
+			<div class="card border-0 shadow-sm h-100">
+				<div class="card-header bg-white"><h5 class="fw-bold mb-0">KYC review history</h5></div>
+				<ul class="list-group list-group-flush">
+					@foreach (var review in Model.Kyc)
+					{
+						<li class="list-group-item">
+							<strong>@review.Outcome</strong> <span class="text-muted">by @review.By on @review.At.ToLocalTime().ToString("dd MMM yyyy HH:mm")</span>
+							@if (!string.IsNullOrWhiteSpace(review.Notes))
+							{
+								<div>@review.Notes</div>
+							}
+						</li>
+					}
+					@if (!Model.Kyc.Any())
+					{
+						<li class="list-group-item text-muted">No KYC reviews recorded.</li>
+					}
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6">
+			<div class="card border-0 shadow-sm h-100">
+				<div class="card-header bg-white"><h5 class="fw-bold mb-0">Employment verification history</h5></div>
+				<ul class="list-group list-group-flush">
+					@foreach (var attempt in Model.Attempts)
+					{
+						<li class="list-group-item">
+							<strong>@attempt.Outcome</strong> via @attempt.Channel <span class="text-muted">by @attempt.By on @attempt.At.ToLocalTime().ToString("dd MMM yyyy HH:mm")</span>
+							<div>Contacted: @attempt.Party; independently sourced: @(attempt.Independent ? "Yes" : "No")</div>
+							@if (!string.IsNullOrWhiteSpace(attempt.Notes))
+							{
+								<div>@attempt.Notes</div>
+							}
+						</li>
+					}
+					@if (!Model.Attempts.Any())
+					{
+						<li class="list-group-item text-muted">No employment verification attempts recorded.</li>
+					}
+				</ul>
+			</div>
+		</div>
+	</div>
+</div>

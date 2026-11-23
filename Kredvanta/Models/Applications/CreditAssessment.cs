@@ -1,5 +1,6 @@
 ﻿
 using Kredvanta.Models.Common;
+using Kredvanta.Models.Credit;
 using Kredvanta.Models.Enums;
 using Kredvanta.Models.Identity;
 using static Kredvanta.Models.Enums.LendingEnums;
@@ -29,9 +30,16 @@ namespace Kredvanta.Models.Applications
         public decimal ProposedMonthlyInstallment { get; set; }
 
         public decimal DebtServiceRatio { get; set; }
-
-        public CreditRecommendation Recommendation { get; set; }
-            = CreditRecommendation.Pending;
+        public Guid? CreditPolicyVersionId { get; set; }
+        public CreditPolicyVersion? CreditPolicyVersion { get; set; }
+        public bool IsCurrent { get; set; } = true;
+        public CreditRecommendation Recommendation { get; set; } = CreditRecommendation.Pending;
+        public string? RiskFlags { get; set; }
+        public string? Notes { get; set; }
+        public string CalculationVersion { get; set; } = "1.0";
+        public decimal AssessedAmount { get; set; }
+        public int AssessedTermPeriods { get; set; }
+        public DateTime AssessedAt { get; set; } = DateTime.UtcNow;
 
         public string? AssessmentNotes { get; set; }
 

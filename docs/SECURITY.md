@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-Security is an important consideration in Kredvanta because the application is designed to handle borrower identification details, personal information, financial records and supporting documents.
+Security is an important consideration in Kredvanta because the application is designed to handle applicants' identification details, personal information, financial records and supporting documents.
 
 This document describes the security mechanisms currently configured in the application and additional security requirements for development and production deployment.
 
@@ -60,7 +60,7 @@ Security considerations include:
 - Restricting database account permissions.
 - Using secure connections.
 - Validating data before persistence.
-- Protecting sensitive borrower information.
+- Protecting sensitive applicant information.
 - Applying appropriate database backup procedures.
 
 ## 6. Configuration and Secret Management
@@ -81,7 +81,7 @@ Examples of sensitive information include:
 
 ## 7. Document Upload Security
 
-Kredvanta supports metadata management for borrower verification and loan application documents.
+Kredvanta supports metadata management for applicant verification and loan application documents.
 
 Document upload functionality must implement the following safeguards:
 
@@ -128,7 +128,7 @@ Financial information requires appropriate protection.
 
 Recommended controls include:
 
-- Restricting access to borrower financial records.
+- Restricting access to applicant financial records.
 - Protecting financial calculations from invalid inputs.
 - Using decimal types for monetary calculations.
 - Recording important financial transactions.

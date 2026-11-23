@@ -1,10 +1,13 @@
-﻿
+﻿using Kredvanta.Authorization;
 using Kredvanta.Data;
 using Kredvanta.Models.Applications;
 using Kredvanta.Models.Borrowers;
 using Kredvanta.Models.Identity;
-using Kredvanta.Models.Products;
+using Kredvanta.Services.Audit;
+using Kredvanta.Services.Eligibility;
+using Kredvanta.Services.Workflow;
 using Kredvanta.ViewModels.LoanApplications;
+using Kredvanta.Services.Documents;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,32 +18,36 @@ using static Kredvanta.Models.Enums.LendingEnums;
 
 namespace Kredvanta.Controllers
 {
-    [Authorize(Roles = "Borrower")]
+    [Authorize(Roles = AppRoles.Borrower)]
     public class LoanApplicationsController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IApplicationWorkflowService _workflow;
+        private readonly IEligibilityService _eligibility;
+        private readonly IAuditService _audit;
 
         public LoanApplicationsController(
             ApplicationDbContext context,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            IApplicationWorkflowService workflow,
+            IEligibilityService eligibility,
+            IAuditService audit)
         {
             _context = context;
             _userManager = userManager;
+            _workflow = workflow;
+            _eligibility = eligibility;
+            _audit = audit;
         }
 
-        // ====================================================
-        // GET: /LoanApplications
-        // Display applications belonging to the logged-in borrower
-        // ====================================================
+        // ---------- Index ----------
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
             var borrower = await GetCurrentBorrowerAsync();
-
-            if (borrower == null)
-                return RedirectToAction("Step1", "Profile");
+            if (borrower == null) return RedirectToAction("Step1", "Profile");
 
             var applications = _context.LoanApplications
                 .AsNoTracking()
@@ -83,350 +90,234 @@ namespace Kredvanta.Controllers
             return View(model);
         }
 
-        // ====================================================
-        // GET: /LoanApplications/Create
-        // Display available loan products
-        // ====================================================
+        // ---------- Create (GET) ----------
 
         [HttpGet]
         public async Task<IActionResult> Create(Guid? loanProductId)
         {
             var borrower = await GetCurrentBorrowerAsync();
+            if (borrower == null) return RedirectToAction("Step1", "Profile");
 
-            if (borrower == null)
-                return RedirectToAction("Step1", "Profile");
-
-            if (borrower.KycStatus != KycStatus.Verified)
-            {
-                TempData["Warning"] =
-                    "Complete identity verification before applying for a loan.";
-
-                return RedirectToAction("Index", "Verification");
-            }
+            var blocked = await BlockIfNotEligibleAsync(borrower);
+            if (blocked != null) return blocked;
 
             var model = new CreateLoanApplicationViewModel();
-
             await LoadAvailableProductsAsync(model);
 
             if (!model.AvailableProducts.Any())
             {
-                TempData["Error"] =
-                    "There are currently no loan products available for application.";
-
+                TempData["Error"] = "There are currently no loan products available for application.";
                 return RedirectToAction("Index", "LoanProducts");
             }
 
-            // Preselect the product if the borrower came
-            // from a specific loan product details page.
-
             if (loanProductId.HasValue)
             {
-                var selectedProduct = model.AvailableProducts
-                    .FirstOrDefault(p => p.Id == loanProductId.Value);
-
-                if (selectedProduct == null)
+                var selected = model.AvailableProducts.FirstOrDefault(p => p.Id == loanProductId.Value);
+                if (selected == null)
                 {
-                    TempData["Error"] =
-                        "The selected loan product is unavailable for applications.";
-
+                    TempData["Error"] = "The selected loan product is unavailable for applications.";
                     return RedirectToAction("Index", "LoanProducts");
                 }
-
-                model.LoanProductId = selectedProduct.Id;
+                model.LoanProductId = selected.Id;
             }
 
             return View(model);
         }
 
-        // ====================================================
-        // POST: /LoanApplications/Create
-        // Create a new draft loan application
-        // ====================================================
+        // ---------- Create (POST) ----------
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            CreateLoanApplicationViewModel model)
+        public async Task<IActionResult> Create(CreateLoanApplicationViewModel model)
         {
             var userId = _userManager.GetUserId(User);
-
-            if (string.IsNullOrEmpty(userId))
-                return Challenge();
+            if (string.IsNullOrEmpty(userId)) return Challenge();
 
             var borrower = await GetCurrentBorrowerAsync();
+            if (borrower == null) return RedirectToAction("Step1", "Profile");
 
-            if (borrower == null)
-                return RedirectToAction("Step1", "Profile");
-
-            if (borrower.KycStatus != KycStatus.Verified)
-            {
-                TempData["Warning"] =
-                    "Complete identity verification before applying for a loan.";
-
-                return RedirectToAction("Index", "Verification");
-            }
-
-            // Retrieve the selected product first.
-            // We deliberately check its status separately
-            // to provide meaningful validation messages.
+            var blocked = await BlockIfNotEligibleAsync(borrower);
+            if (blocked != null) return blocked;
 
             var product = await _context.LoanProducts
-                .FirstOrDefaultAsync(p =>
-                    p.Id == model.LoanProductId);
+                .FirstOrDefaultAsync(p => p.Id == model.LoanProductId);
 
             if (product == null)
             {
-                ModelState.AddModelError(
-                    nameof(model.LoanProductId),
+                ModelState.AddModelError(nameof(model.LoanProductId),
                     "The selected loan product could not be found.");
             }
             else if (!product.IsActive)
             {
-                ModelState.AddModelError(
-                    nameof(model.LoanProductId),
+                ModelState.AddModelError(nameof(model.LoanProductId),
                     "This loan product is currently inactive.");
             }
             else if (!product.IsAvailableForApplication)
             {
-                ModelState.AddModelError(
-                    nameof(model.LoanProductId),
+                ModelState.AddModelError(nameof(model.LoanProductId),
                     "This loan product is not currently accepting applications.");
             }
             else
             {
-                // Validate requested loan amount.
-
                 if (model.RequestedAmount < product.MinimumAmount ||
                     model.RequestedAmount > product.MaximumAmount)
                 {
-                    ModelState.AddModelError(
-                        nameof(model.RequestedAmount),
+                    ModelState.AddModelError(nameof(model.RequestedAmount),
                         $"The requested amount must be between " +
-                        $"{product.MinimumAmount:N2} and " +
-                        $"{product.MaximumAmount:N2}.");
+                        $"{product.MinimumAmount:N2} and {product.MaximumAmount:N2}.");
                 }
-
-                // Validate repayment term.
 
                 if (model.RequestedTermPeriods < product.MinimumTermPeriods ||
                     model.RequestedTermPeriods > product.MaximumTermPeriods)
                 {
-                    ModelState.AddModelError(
-                        nameof(model.RequestedTermPeriods),
+                    ModelState.AddModelError(nameof(model.RequestedTermPeriods),
                         $"The repayment term must be between " +
-                        $"{product.MinimumTermPeriods} and " +
-                        $"{product.MaximumTermPeriods} periods.");
+                        $"{product.MinimumTermPeriods} and {product.MaximumTermPeriods} periods.");
                 }
             }
-
-            // If validation fails, reload available products
-            // and return the form with validation messages.
 
             if (!ModelState.IsValid)
             {
                 await LoadAvailableProductsAsync(model);
-
                 return View(model);
             }
 
-            // Create the loan application as a Draft.
-            // The borrower can upload supporting documents
-            // before submitting the application.
-
             var application = new LoanApplication
             {
-                ApplicationNumber =
-                    await GenerateApplicationNumberAsync(),
-
+                ApplicationNumber = await GenerateApplicationNumberAsync(),
                 BorrowerId = borrower.Id,
-
                 LoanProductId = product!.Id,
-
                 RequestedAmount = model.RequestedAmount,
-
                 RequestedTermPeriods = model.RequestedTermPeriods,
-
                 LoanPurpose = model.LoanPurpose.Trim(),
-
                 Status = LoanApplicationStatus.Draft
             };
 
             _context.LoanApplications.Add(application);
 
-            // Record initial application history.
-
-            var history = new LoanApplicationStatusHistory
+            _context.LoanApplicationStatusHistories.Add(new LoanApplicationStatusHistory
             {
                 LoanApplicationId = application.Id,
-
                 PreviousStatus = null,
-
                 NewStatus = LoanApplicationStatus.Draft,
-
                 ChangedAt = DateTime.UtcNow,
-
                 ChangedByUserId = userId,
-
                 Notes = "Application draft created."
-            };
+            });
 
-            _context.LoanApplicationStatusHistories.Add(history);
+            _audit.Record("ApplicationCreated", nameof(LoanApplication), application.Id.ToString(),
+                null, new
+                {
+                    application.ApplicationNumber,
+                    application.RequestedAmount,
+                    application.RequestedTermPeriods,
+                    product.ProductCode
+                });
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] =
-                "Your loan application draft has been created successfully.";
-
-            return RedirectToAction(
-                nameof(Details),
-                new { id = application.Id });
+            TempData["Success"] = "Your loan application draft has been created successfully.";
+            return RedirectToAction(nameof(Details), new { id = application.Id });
         }
 
-        // ====================================================
-        // GET: /LoanApplications/Details/{id}
-        // Display an individual loan application
-        // ====================================================
+        // ---------- Details ----------
 
         [HttpGet]
         public async Task<IActionResult> Details(Guid id)
         {
             var borrower = await GetCurrentBorrowerAsync();
-
-            if (borrower == null)
-                return RedirectToAction("Step1", "Profile");
-
-            // Only retrieve an application belonging
-            // to the authenticated borrower.
+            if (borrower == null) return RedirectToAction("Step1", "Profile");
 
             var application = await _context.LoanApplications
                 .AsNoTracking()
                 .Include(a => a.LoanProduct)
-                .Include(a => a.Documents)
-                    .ThenInclude(d => d.RequiredDocument)
-                .Include(a => a.StatusHistory)
-                    .ThenInclude(h => h.ChangedByUser)
-                .FirstOrDefaultAsync(a =>
-                    a.Id == id &&
-                    a.BorrowerId == borrower.Id);
+                .Include(a => a.Documents).ThenInclude(d => d.RequiredDocument)
+                .Include(a => a.StatusHistory).ThenInclude(h => h.ChangedByUser)
+                .FirstOrDefaultAsync(a => a.Id == id && a.BorrowerId == borrower.Id);
 
-            if (application == null)
-                return NotFound();
+            if (application == null) return NotFound();
 
-            // Retrieve active requirements for this product.
-
-            var requiredDocuments = await _context
-                .LoanProductRequiredDocuments
+            var requiredDocuments = await _context.LoanProductRequiredDocuments
                 .AsNoTracking()
-                .Where(d =>
-                    d.LoanProductId == application.LoanProductId &&
-                    d.IsActive)
+                .Where(d => d.LoanProductId == application.LoanProductId && d.IsActive)
                 .OrderByDescending(d => d.IsMandatory)
                 .ThenBy(d => d.DocumentName)
                 .ToListAsync();
 
+            var currentUserId = _userManager.GetUserId(User);
+
             var model = new LoanApplicationDetailsViewModel
             {
                 Id = application.Id,
-
                 ApplicationNumber = application.ApplicationNumber,
-
                 LoanProductName = application.LoanProduct.ProductName,
-
                 RequestedAmount = application.RequestedAmount,
-
                 RequestedTermPeriods = application.RequestedTermPeriods,
-
                 LoanPurpose = application.LoanPurpose,
-
                 Status = application.Status,
-
                 CreatedAt = application.CreatedAt,
-
                 SubmittedAt = application.SubmittedAt,
-
                 DecisionAt = application.DecisionAt,
 
-                // Build the required-document checklist.
+                CanUploadDocuments = application.Status is LoanApplicationStatus.Draft
+                                                         or LoanApplicationStatus.DocumentsRequired,
 
                 RequiredDocuments = requiredDocuments.Select(requirement =>
                 {
-                    var latestDocument = application.Documents
-                        .Where(d =>
-                            d.LoanProductRequiredDocumentId == requirement.Id)
-                        .OrderByDescending(d => d.CreatedAt)
-                        .FirstOrDefault();
-
-                    bool isSatisfied =
-                        latestDocument != null &&
-                        (latestDocument.ReviewStatus ==
-                            DocumentReviewStatus.Pending ||
-                         latestDocument.ReviewStatus ==
-                            DocumentReviewStatus.Verified);
+                    var doc = application.Documents.FirstOrDefault(d =>
+                        d.IsCurrent && d.LoanProductRequiredDocumentId == requirement.Id);
 
                     return new RequiredApplicationDocumentViewModel
                     {
                         Id = requirement.Id,
-
                         DocumentName = requirement.DocumentName,
-
                         Description = requirement.Description,
-
                         IsMandatory = requirement.IsMandatory,
-
-                        RequiredPeriodMonths =
-                            requirement.RequiredPeriodMonths,
-
-                        IsUploaded = latestDocument != null,
-
-                        ReviewStatus = latestDocument?.ReviewStatus,
-
-                        UploadedAt = latestDocument?.CreatedAt,
-
-                        IsSatisfied = isSatisfied
+                        RequiredPeriodMonths = requirement.RequiredPeriodMonths,
+                        IsUploaded = doc != null,
+                        ReviewStatus = doc?.ReviewStatus,
+                        UploadedAt = doc?.CreatedAt,
+                        IsSatisfied = doc != null &&
+                            (doc.ReviewStatus == DocumentReviewStatus.Pending ||
+                             doc.ReviewStatus == DocumentReviewStatus.Verified),
+                        DocumentId = doc?.Id,
+                        Version = doc?.Version ?? 0,
+                        
+                        BorrowerMessage = BorrowerMessageFor(doc)
                     };
                 }).ToList(),
-
-                // Application status history.
 
                 History = application.StatusHistory
                     .OrderByDescending(h => h.ChangedAt)
                     .Select(h => new ApplicationHistoryItemViewModel
                     {
                         PreviousStatus = h.PreviousStatus,
-
                         NewStatus = h.NewStatus,
-
                         ChangedAt = h.ChangedAt,
-
-                        Notes = h.Notes,
-
+                        // Staff notes can be internal: borrowers see only their own.
+                        Notes = h.ChangedByUserId == currentUserId ? h.Notes : null,
                         ChangedByName = h.ChangedByUser == null
                             ? "System"
-                            : $"{h.ChangedByUser.FirstName} " +
-                              $"{h.ChangedByUser.LastName}"
+                            : h.ChangedByUserId == currentUserId
+                                ? "You"
+                                : "Kredvanta staff"
                     })
                     .ToList(),
-
-                // Uploaded application documents.
 
                 Documents = application.Documents
                     .OrderByDescending(d => d.CreatedAt)
                     .Select(d => new ApplicationDocumentItemViewModel
                     {
                         Id = d.Id,
-
                         OriginalFileName = d.OriginalFileName,
-
-                        RequiredDocumentName =
-                            d.RequiredDocument != null
-                                ? d.RequiredDocument.DocumentName
-                                : "Additional supporting document",
-
+                        RequiredDocumentName = d.RequiredDocument != null
+                            ? d.RequiredDocument.DocumentName
+                            : "Additional supporting document",
                         ReviewStatus = d.ReviewStatus,
-
-                        ReviewComments = d.ReviewComments,
-
-                        UploadedAt = d.CreatedAt
+                        ReviewComments = BorrowerMessageFor(d),   
+                        UploadedAt = d.CreatedAt,
+                        Version = d.Version,
+                        IsCurrent = d.IsCurrent
                     })
                     .ToList()
             };
@@ -434,286 +325,124 @@ namespace Kredvanta.Controllers
             return View(model);
         }
 
-        // ====================================================
-        // POST: /LoanApplications/Submit/{id}
-        // Submit a draft loan application
-        // ====================================================
+        // ---------- Submit ----------
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Submit(Guid id)
         {
             var userId = _userManager.GetUserId(User);
-
-            if (string.IsNullOrEmpty(userId))
-                return Challenge();
+            if (string.IsNullOrEmpty(userId)) return Challenge();
 
             var borrower = await GetCurrentBorrowerAsync();
+            if (borrower == null) return RedirectToAction("Step1", "Profile");
 
-            if (borrower == null)
-                return RedirectToAction("Step1", "Profile");
+            var owns = await _context.LoanApplications
+                .AnyAsync(a => a.Id == id && a.BorrowerId == borrower.Id);
+            if (!owns) return NotFound();
 
-            var application = await _context.LoanApplications
-                .Include(a => a.LoanProduct)
-                .FirstOrDefaultAsync(a =>
-                    a.Id == id &&
-                    a.BorrowerId == borrower.Id);
+            // Eligibility, documents and product availability are enforced by the workflow guards.
+            var result = await _workflow.TransitionAsync(
+                id, LoanApplicationStatus.Submitted, userId, "Application submitted by applicant.");
 
-            if (application == null)
-                return NotFound();
-
-            // Only Draft applications can be submitted.
-
-            if (application.Status != LoanApplicationStatus.Draft)
-            {
-                TempData["Error"] =
-                    "Only draft applications can be submitted.";
-
-                return RedirectToAction(nameof(Details), new { id });
-            }
-
-            // KYC verification must be completed before
-            // an application can proceed to submission.
-
-            if (borrower.KycStatus != KycStatus.Verified)
-            {
-                TempData["Warning"] =
-                    "Complete identity verification before submitting your loan application.";
-
-                return RedirectToAction("Index", "Verification");
-            }
-
-            // Check that the product is still active.
-
-            if (!application.LoanProduct.IsActive)
-            {
-                TempData["Error"] =
-                    "This loan product is no longer active. Please contact support.";
-
-                return RedirectToAction(nameof(Details), new { id });
-            }
-
-            // Check that the product is still accepting applications.
-
-            if (!application.LoanProduct.IsAvailableForApplication)
-            {
-                TempData["Error"] =
-                    "This loan product is no longer accepting applications.";
-
-                return RedirectToAction(nameof(Details), new { id });
-            }
-
-            // Retrieve all active mandatory requirements.
-
-            var mandatoryDocuments = await _context
-                .LoanProductRequiredDocuments
-                .AsNoTracking()
-                .Where(d =>
-                    d.LoanProductId == application.LoanProductId &&
-                    d.IsActive &&
-                    d.IsMandatory)
-                .ToListAsync();
-
-            // Retrieve uploaded documents linked to requirements.
-
-            var uploadedDocuments = await _context
-                .LoanApplicationDocuments
-                .AsNoTracking()
-                .Where(d =>
-                    d.LoanApplicationId == application.Id &&
-                    d.LoanProductRequiredDocumentId != null)
-                .Select(d => new
-                {
-                    RequiredDocumentId =
-                        d.LoanProductRequiredDocumentId!.Value,
-
-                    d.ReviewStatus,
-
-                    d.CreatedAt
-                })
-                .ToListAsync();
-
-            // Only the latest document for each requirement
-            // determines whether that requirement is satisfied.
-
-            var suppliedDocumentIds = uploadedDocuments
-                .GroupBy(d => d.RequiredDocumentId)
-                .Where(group =>
-                {
-                    var latestDocument = group
-                        .OrderByDescending(d => d.CreatedAt)
-                        .First();
-
-                    return latestDocument.ReviewStatus ==
-                               DocumentReviewStatus.Pending ||
-                           latestDocument.ReviewStatus ==
-                               DocumentReviewStatus.Verified;
-                })
-                .Select(group => group.Key)
-                .ToHashSet();
-
-            // Identify outstanding mandatory documents.
-
-            var missingDocuments = mandatoryDocuments
-                .Where(required =>
-                    !suppliedDocumentIds.Contains(required.Id))
-                .ToList();
-
-            var previousStatus = application.Status;
-
-            application.SubmittedAt ??= DateTime.UtcNow;
-
-            application.UpdatedAt = DateTime.UtcNow;
-
-            if (missingDocuments.Any())
-            {
-                // The application has been received,
-                // but mandatory supporting documents are missing.
-
-                application.Status =
-                    LoanApplicationStatus.DocumentsRequired;
-
-                var missingNames = string.Join(
-                    ", ",
-                    missingDocuments.Select(d => d.DocumentName));
-
-                _context.LoanApplicationStatusHistories.Add(
-                    new LoanApplicationStatusHistory
-                    {
-                        LoanApplicationId = application.Id,
-
-                        PreviousStatus = previousStatus,
-
-                        NewStatus = application.Status,
-
-                        ChangedAt = DateTime.UtcNow,
-
-                        ChangedByUserId = userId,
-
-                        Notes =
-                            $"Initial submission received. Outstanding " +
-                            $"mandatory documents: {missingNames}."
-                    });
-
-                await _context.SaveChangesAsync();
-
-                TempData["Warning"] =
-                    "Your application has been received. Please upload " +
-                    "the outstanding mandatory documents to proceed.";
-            }
-            else
-            {
-                // All mandatory supporting documents have been supplied.
-
-                application.Status =
-                    LoanApplicationStatus.Submitted;
-
-                _context.LoanApplicationStatusHistories.Add(
-                    new LoanApplicationStatusHistory
-                    {
-                        LoanApplicationId = application.Id,
-
-                        PreviousStatus = previousStatus,
-
-                        NewStatus = application.Status,
-
-                        ChangedAt = DateTime.UtcNow,
-
-                        ChangedByUserId = userId,
-
-                        Notes =
-                            "Application submitted. All mandatory " +
-                            "documents supplied."
-                    });
-
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] =
-                    "Your loan application has been submitted successfully.";
-            }
+            TempData[result.Succeeded ? "Success" : "Error"] =
+                result.Succeeded
+                    ? "Your loan application has been submitted for verification."
+                    : result.Error;
 
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        // ====================================================
-        // HELPER: Retrieve the authenticated borrower's profile
-        // ====================================================
+        // ---------- Helpers ----------
+
+        private async Task<IActionResult?> BlockIfNotEligibleAsync(Borrower borrower)
+        {
+            var result = await _eligibility.CheckAsync(borrower.Id);
+            if (!result.IsEligible)
+            {
+                TempData["Warning"] = string.Join(" ", result.Reasons);
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            var hasOpen = await _context.LoanApplications.AnyAsync(a =>
+                a.BorrowerId == borrower.Id &&
+                (a.Status == LoanApplicationStatus.Draft ||
+                 a.Status == LoanApplicationStatus.Submitted ||
+                 a.Status == LoanApplicationStatus.UnderReview ||
+                 a.Status == LoanApplicationStatus.DocumentsRequired ||
+                 a.Status == LoanApplicationStatus.Recommended ||
+                 a.Status == LoanApplicationStatus.Approved));
+
+            if (hasOpen)
+            {
+                TempData["Warning"] = "You already have an application in progress.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            return null;
+        }
+
+
+
+        private static string? BorrowerMessageFor(LoanApplicationDocument? d) => d?.ReviewStatus switch
+        {
+            DocumentReviewStatus.Rejected => d.RejectionReasonCode switch
+            {
+                "ILLEGIBLE" => "The file was not legible. Please upload a clearer copy.",
+                "EXPIRED" => "This document has expired. Please upload a current one.",
+                "WRONG_DOCUMENT" => "This is not the document requested. Please upload the correct one.",
+                "INCOMPLETE" => "The document is incomplete. Please upload all pages.",
+                // DETAILS_MISMATCH, SUSPECTED_ALTERATION and OTHER stay neutral on purpose
+                _ => "We could not accept this document. Please upload a new copy or contact us."
+            },
+            // Staff write this text for the borrower
+            DocumentReviewStatus.ClarificationRequired => d.ReviewComments,
+            _ => null
+        };
 
         private async Task<Borrower?> GetCurrentBorrowerAsync()
         {
             var userId = _userManager.GetUserId(User);
-
-            if (string.IsNullOrEmpty(userId))
-                return null;
+            if (string.IsNullOrEmpty(userId)) return null;
 
             return await _context.Borrowers
-                .FirstOrDefaultAsync(b =>
-                    b.ApplicationUserId == userId &&
-                    b.IsActive);
+                .FirstOrDefaultAsync(b => b.ApplicationUserId == userId && b.IsActive);
         }
 
-        // ====================================================
-        // HELPER: Load available products into the application form
-        // ====================================================
-
-        private async Task LoadAvailableProductsAsync(
-            CreateLoanApplicationViewModel model)
+        private async Task LoadAvailableProductsAsync(CreateLoanApplicationViewModel model)
         {
             model.AvailableProducts = await _context.LoanProducts
                 .AsNoTracking()
-                .Where(p =>
-                    p.IsActive &&
-                    p.IsAvailableForApplication)
+                .Where(p => p.IsActive && p.IsAvailableForApplication)
                 .OrderBy(p => p.ProductName)
                 .Select(p => new LoanProductOptionViewModel
                 {
                     Id = p.Id,
-
                     ProductCode = p.ProductCode,
-
                     ProductName = p.ProductName,
-
                     Description = p.Description,
-
                     MinimumAmount = p.MinimumAmount,
-
                     MaximumAmount = p.MaximumAmount,
-
                     AnnualInterestRate = p.AnnualInterestRate,
-
                     MinimumTermPeriods = p.MinimumTermPeriods,
-
                     MaximumTermPeriods = p.MaximumTermPeriods,
-
-                    RepaymentFrequency =
-                        p.RepaymentFrequency.ToString(),
-
-                    InterestMethod =
-                        p.InterestMethod.ToString()
+                    RepaymentFrequency = p.RepaymentFrequency.ToString(),
+                    InterestMethod = p.InterestMethod.ToString()
                 })
                 .ToListAsync();
         }
 
-        // ====================================================
-        // HELPER: Generate a unique application number
-        // ====================================================
-
         private async Task<string> GenerateApplicationNumberAsync()
         {
-            string applicationNumber;
-
+            string number;
             do
             {
-                applicationNumber =
-                    $"KRV-{DateTime.UtcNow:yyyyMMdd}-" +
-                    $"{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
-
+                number = $"KRV-{DateTime.UtcNow:yyyyMMdd}-" +
+                         $"{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
             }
-            while (await _context.LoanApplications
-                .AnyAsync(a =>
-                    a.ApplicationNumber == applicationNumber));
+            while (await _context.LoanApplications.AnyAsync(a => a.ApplicationNumber == number));
 
-            return applicationNumber;
+            return number;
         }
     }
 }

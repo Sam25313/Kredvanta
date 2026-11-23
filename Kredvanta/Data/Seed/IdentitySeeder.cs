@@ -1,63 +1,84 @@
-﻿using Kredvanta.Models.Identity;
+﻿using Kredvanta.Authorization;
+using Kredvanta.Models.Identity;
 using Microsoft.AspNetCore.Identity;
 
-namespace Kredvanta.Data.Seed
+namespace Kredvanta.Data.Seed;
+
+public static class IdentitySeeder
 {
-    public static class IdentitySeeder
+    public static async Task SeedAsync(IServiceProvider serviceProvider, IConfiguration configuration)
     {
-        public static async Task AssignAdministratorAsync(
-            IServiceProvider serviceProvider,
-            string email)
+        using var scope = serviceProvider.CreateScope();
+        var services = scope.ServiceProvider;
+
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeeder");
+
+        await EnsureRolesAsync(roleManager);
+        await EnsureAdministratorAsync(userManager, configuration, logger);
+
+        logger.LogInformation("Identity seeding complete.");
+    }
+
+    private static async Task EnsureRolesAsync(RoleManager<IdentityRole> roleManager)
+    {
+        foreach (var role in AppRoles.All)
         {
-            using var scope = serviceProvider.CreateScope();
-
-            var roleManager = scope.ServiceProvider
-                .GetRequiredService<RoleManager<IdentityRole>>();
-
-            var userManager = scope.ServiceProvider
-                .GetRequiredService<UserManager<ApplicationUser>>();
-
-            // 1. Ensure the Administrator role exists.
-            if (!await roleManager.RoleExistsAsync("Administrator"))
-            {
-                var roleResult = await roleManager.CreateAsync(
-                    new IdentityRole("Administrator"));
-
-                if (!roleResult.Succeeded)
-                {
-                    throw new Exception(
-                        "Could not create Administrator role: " +
-                        string.Join(", ", roleResult.Errors.Select(e => e.Description)));
-                }
-            }
-
-            // 2. Find the user using their email address.
-            var user = await userManager.FindByEmailAsync(email);
-
-            if (user == null)
-            {
-                throw new Exception(
-                    $"No registered user was found with email: {email}");
-            }
-
-            // 3. Assign the Administrator role.
-            if (!await userManager.IsInRoleAsync(user, "Administrator"))
-            {
-                var result = await userManager.AddToRoleAsync(
-                    user, "Administrator");
-
-                if (!result.Succeeded)
-                {
-                    throw new Exception(
-                        "Could not assign Administrator role: " +
-                        string.Join(", ", result.Errors.Select(e => e.Description)));
-                }
-            }
-            var isAdmin = await userManager.IsInRoleAsync(
-    user, "Administrator");
-
-            Console.WriteLine(
-                $"USER: {user.Email} | ADMINISTRATOR: {isAdmin}");
+            if (await roleManager.RoleExistsAsync(role)) continue;
+            ThrowIfFailed(await roleManager.CreateAsync(new IdentityRole(role)),
+                $"Failed to create role '{role}'");
         }
+    }
+
+    private static async Task EnsureAdministratorAsync(
+        UserManager<ApplicationUser> userManager,
+        IConfiguration configuration,
+        ILogger logger)
+    {
+        var email = configuration["SeedAdmin:Email"];
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            logger.LogWarning(
+                "Administrator seeding was skipped because SeedAdmin:Email is not configured.");
+            return;
+        }
+
+        var admin = await userManager.FindByEmailAsync(email);
+
+        if (admin is null)
+        {
+            var password = configuration["SeedAdmin:Password"];
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                logger.LogWarning(
+                    "Administrator seeding was skipped because SeedAdmin:Password is not configured and the administrator account does not exist.");
+                return;
+            }
+
+            admin = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                IsActive = true
+            };
+
+            ThrowIfFailed(await userManager.CreateAsync(admin, password),
+                "Failed to create the initial administrator");
+        }
+
+        if (!await userManager.IsInRoleAsync(admin, AppRoles.Administrator))
+        {
+            ThrowIfFailed(await userManager.AddToRoleAsync(admin, AppRoles.Administrator),
+                "Failed to assign Administrator role");
+        }
+    }
+
+    private static void ThrowIfFailed(IdentityResult result, string message)
+    {
+        if (result.Succeeded) return;
+        throw new InvalidOperationException(
+            $"{message}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
     }
 }

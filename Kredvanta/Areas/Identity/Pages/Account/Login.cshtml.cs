@@ -1,4 +1,5 @@
 
+using Kredvanta.Authorization;
 using Kredvanta.Models.Identity;
 
 using Microsoft.AspNetCore.Authentication;
@@ -58,7 +59,8 @@ namespace Kredvanta.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnGetAsync(
             string? returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
+            returnUrl ??= Url.Content("~/go");
+            //returnUrl ??= Url.Content("~/");
 
             // Redirect already authenticated users
             // according to their assigned roles.
@@ -100,7 +102,8 @@ namespace Kredvanta.Areas.Identity.Pages.Account
         public async Task<IActionResult> OnPostAsync(
             string? returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
+            returnUrl ??= Url.Content("~/go");
+            //returnUrl ??= Url.Content("~/");
             ReturnUrl = returnUrl;
 
             await LoadExternalLoginsAsync();
@@ -176,30 +179,22 @@ namespace Kredvanta.Areas.Identity.Pages.Account
         private async Task<IActionResult> RedirectToRoleDashboardAsync(
             ApplicationUser user)
         {
+            var roles = await _userManager.GetRolesAsync(user);
+
             // Administrator has the highest priority.
-            if (await _userManager.IsInRoleAsync(
-                user, "Administrator"))
+            if (roles.Contains(AppRoles.Administrator))
             {
                 return RedirectToAction(
                     "Index", "AdminDashboard");
             }
 
-            if (await _userManager.IsInRoleAsync(
-                user, "CreditManager"))
+            if (roles.Any(AppRoles.CaseReaders.Contains))
             {
                 return RedirectToAction(
-                    "Index", "CreditDashboard");
+                    "Index", "StaffHome");
             }
 
-            if (await _userManager.IsInRoleAsync(
-                user, "LoanOfficer"))
-            {
-                return RedirectToAction(
-                    "Index", "LoanOfficerDashboard");
-            }
-
-            if (await _userManager.IsInRoleAsync(
-                user, "Borrower"))
+            if (roles.Contains(AppRoles.Borrower))
             {
                 return RedirectToAction(
                     "Index", "Dashboard");

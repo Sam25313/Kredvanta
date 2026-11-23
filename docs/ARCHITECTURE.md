@@ -34,7 +34,7 @@ The View layer provides the user interface.
 
 Kredvanta uses Razor Views (`.cshtml`) to render dynamic HTML pages.
 
-The Views directory contains interfaces for different application modules, including borrower management, loan processing and dashboards.
+The Views directory contains interfaces for different application modules, including applicant management, loan processing and dashboards.
 
 ### Controller
 

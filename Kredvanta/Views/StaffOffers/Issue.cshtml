@@ -1,0 +1,99 @@
+﻿@model Kredvanta.Controllers.StaffOffersController.IssuePage
+
+@{
+    ViewData["Title"] = "Prepare loan offer";
+    Layout = "_StaffLayout";
+    var terms = Model.Terms;
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <a asp-action="Index" class="small text-decoration-none text-muted"><i class="bi bi-arrow-left me-1"></i>Back to offer operations</a>
+            <h1 class="h2 fw-bold mt-2 mb-1">Prepare loan offer</h1>
+            <p class="text-muted mb-0">Application @Model.Number <span class="mx-1">·</span> @Model.Borrower</p>
+        </div>
+        <span class="badge text-bg-primary px-3 py-2">Credit approved</span>
+    </div>
+
+    @if (terms is null)
+    {
+        <div class="alert alert-warning border-0 shadow-sm" role="alert">
+            <h2 class="h6 fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Offer cannot be prepared</h2>
+            <p class="mb-0">@Model.Error</p>
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary mt-3">Return to offers</a>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info border-0 shadow-sm" role="note">
+            Check that the calculated terms match the credit decision and approved product terms. Issuing freezes these terms and sends the offer to the applicant; it does not disburse funds.
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body"><div class="small text-muted">Approved principal</div><div class="h4 fw-bold mb-0">KES @terms.Principal.ToString("N2")</div><div class="small text-muted">Requested: KES @Model.Requested.ToString("N2")</div></div></div></div>
+            <div class="col-sm-6 col-xl-3"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body"><div class="small text-muted">Net proceeds</div><div class="h4 fw-bold text-success mb-0">KES @terms.NetProceeds.ToString("N2")</div><div class="small text-muted">After KES @terms.Fee.ToString("N2") fee</div></div></div></div>
+            <div class="col-sm-6 col-xl-3"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body"><div class="small text-muted">Total to repay</div><div class="h4 fw-bold mb-0">KES @terms.TotalRepayable.ToString("N2")</div><div class="small text-muted">Interest: KES @terms.TotalInterest.ToString("N2")</div></div></div></div>
+            <div class="col-sm-6 col-xl-3"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body"><div class="small text-muted">Regular instalment</div><div class="h4 fw-bold mb-0">KES @terms.Instalment.ToString("N2")</div><div class="small text-muted">@terms.Term @terms.Frequency instalments</div></div></div></div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-xl-8">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-header bg-white p-4">
+                        <h2 class="h5 fw-bold mb-1">Repayment schedule</h2>
+                        <p class="small text-muted mb-0">@terms.Method interest · @terms.Frequency repayments · Final payment @terms.Maturity.ToString("dd MMM yyyy")</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light"><tr><th class="ps-4">#</th><th>Due date</th><th>Principal</th><th>Interest</th><th>Instalment</th><th class="pe-4">Balance</th></tr></thead>
+                            <tbody>
+                                @foreach (var line in terms.Schedule)
+                                {
+                                    <tr><td class="ps-4">@line.Number</td><td>@line.DueDate.ToString("dd MMM yyyy")</td><td>KES @line.Principal.ToString("N2")</td><td>KES @line.Interest.ToString("N2")</td><td class="fw-semibold">KES @line.Total.ToString("N2")</td><td class="pe-4">KES @line.Balance.ToString("N2")</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4">
+                <div class="card border-0 shadow-sm rounded-4 mb-3">
+                    <div class="card-body p-4">
+                        <h2 class="h5 fw-bold">Offer details</h2>
+                        <dl class="mb-0">
+                            <dt class="small text-muted mt-3">Annual interest rate</dt><dd>@terms.Rate.ToString("N2")% · @terms.Method</dd>
+                            <dt class="small text-muted">First instalment</dt><dd>@terms.FirstDue.ToString("dd MMM yyyy")</dd>
+                            <dt class="small text-muted">Processing fee</dt><dd>KES @terms.Fee.ToString("N2")</dd>
+                            @if (!string.IsNullOrWhiteSpace(terms.Conditions))
+                            {
+                                <dt class="small text-muted">Credit conditions</dt><dd>@terms.Conditions</dd>
+                            }
+                        </dl>
+                        <form method="get" asp-action="Issue" asp-route-id="@Model.Id" class="border-top pt-3 mt-3">
+                            <label class="form-label" for="firstDue">Change first instalment date</label>
+                            <div class="input-group">
+                                <input id="firstDue" type="date" name="firstDue" value="@terms.FirstDue.ToString("yyyy-MM-dd")" class="form-control" />
+                                <button class="btn btn-outline-primary" type="submit">Recalculate</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm rounded-4 border-start border-4 border-success">
+                    <div class="card-body p-4">
+                        <h2 class="h5 fw-bold">Issue this offer</h2>
+                        <p class="small text-muted">Confirm you checked the amount, rate, fees and schedule against the manager's approval.</p>
+                        <form method="post" asp-action="Issue" asp-route-id="@Model.Id">
+                            <input type="hidden" name="firstDue" value="@terms.FirstDue.ToString("yyyy-MM-dd")" />
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="confirm" value="true" id="confirmTerms" required />
+                                <label class="form-check-label small" for="confirmTerms">I have verified these offer terms against the approval.</label>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100"><i class="bi bi-send me-2"></i>Issue offer to applicant</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

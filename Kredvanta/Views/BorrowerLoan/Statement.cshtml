@@ -1,0 +1,72 @@
+﻿@using static Kredvanta.Models.Enums.LendingEnums
+@model Kredvanta.Controllers.BorrowerLoanController.StatementPage
+@{
+    ViewData["Title"] = "Loan statement"; var l = Model.Loan;
+}
+
+<div class="container py-4" style="max-width: 900px;">
+    <a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none text-muted"><i class="bi bi-arrow-left me-1"></i>Back to dashboard</a>
+    <h2 class="fw-bold mt-2 mb-1">Loan statement</h2>
+    <p class="text-muted">@l.LoanNumber, @l.ProductNameSnapshot</p>
+
+    @if (l.Status == LoanStatus.Overdue)
+    {
+        <div class="alert alert-danger">You have overdue instalments. Please pay as soon as you can, or contact us if you have difficulty.</div>
+    }
+    @if (l.Status == LoanStatus.Completed)
+    {
+        <div class="alert alert-success">This loan is fully repaid. Thank you.</div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="small text-muted">Loan amount</div><strong>@l.CurrencyCode @l.PrincipalAmount.ToString("N2")</strong></div></div></div>
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="small text-muted">Total to repay</div><strong>@l.CurrencyCode @l.TotalRepayable.ToString("N2")</strong></div></div></div>
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="small text-muted">Paid so far</div><strong class="text-success">@l.CurrencyCode @Model.Paid.ToString("N2")</strong></div></div></div>
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="small text-muted">Balance</div><strong class="text-danger">@l.CurrencyCode @l.OutstandingBalance.ToString("N2")</strong></div></div></div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">Instalments</div>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead class="table-light"><tr><th class="ps-3">#</th><th>Due</th><th>Amount</th><th>Paid</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var s in Model.Schedule)
+                    {
+                        <tr class="@(s.Status == ScheduleStatus.Overdue ? "table-danger" : "")">
+                            <td class="ps-3">@s.InstallmentNumber</td>
+                            <td>@s.DueDate.ToString("dd MMM yyyy")</td>
+                            <td>@s.TotalDue.ToString("N2")</td>
+                            <td>@s.AmountPaid.ToString("N2")</td>
+                            <td>@s.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white fw-bold">Payments received</div>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead class="table-light"><tr><th class="ps-3">Receipt</th><th>Date</th><th>Method</th><th>Amount</th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model.Payments)
+                    {
+                        <tr>
+                            <td class="ps-3">@p.ReceiptNumber</td>
+                            <td>@p.ReceivedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+                            <td>@p.Method</td>
+                            <td>@p.Amount.ToString("N2")</td>
+                        </tr>
+                    }
+                    @if (!Model.Payments.Any())
+                    {
+                        <tr><td colspan="4" class="text-center text-muted py-3">No payments yet.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

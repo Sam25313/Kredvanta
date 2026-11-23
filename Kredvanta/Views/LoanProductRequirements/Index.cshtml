@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Document Requirements";
+    Layout = User.IsInRole("Administrator") ? "_AdminLayout" : "_Layout";
 
     var loanProductId = (Guid)ViewBag.LoanProductId;
     var loanProductName = (string)ViewBag.LoanProductName;
@@ -31,7 +32,7 @@
             <h3 class="fw-bold mb-1">Document Requirements</h3>
 
             <p class="text-muted mb-0">
-                Manage the documents borrowers must submit when applying for
+                Manage the documents applicants must submit when applying for
                 <strong>@loanProductName</strong>.
             </p>
         </div>
@@ -308,9 +309,9 @@
             <i class="bi bi-info-circle text-primary fs-5"></i>
             <div>
                 <strong>Important:</strong>
-                Only active document requirements are presented to borrowers
+                Only active document requirements are presented to applicants
                 during the application process. Mandatory documents must be
-                submitted before an application can be submitted.
+                uploaded before an application can be submitted.
             </div>
         </div>
     </div>

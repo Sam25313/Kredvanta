@@ -1,0 +1,144 @@
+@using Kredvanta.Authorization
+@using Kredvanta.Services.Staff
+@model List<StaffListItem>
+
+@{
+	ViewData["Title"] = "Staff management";
+	Layout = "_AdminLayout";
+	var currentUserId = ViewBag.CurrentUserId as string;
+	var newStaffEmail = TempData["NewStaffEmail"] as string;
+	var newStaffPassword = TempData["NewStaffPassword"] as string;
+}
+
+<div class="container-fluid py-4">
+	<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+		<div>
+			<span class="text-primary fw-semibold small">ADMINISTRATION</span>
+			<h2 class="fw-bold mb-1">Staff management</h2>
+			<p class="text-muted mb-0">Create staff accounts and manage access to lending operations.</p>
+		</div>
+		<a asp-action="Create" class="btn btn-primary">
+			<i class="bi bi-person-plus me-2"></i>Add staff member
+		</a>
+	</div>
+
+	@if (TempData["Success"] is string success)
+	{
+		<div class="alert alert-success" role="status">@success</div>
+	}
+	@if (TempData["Error"] is string error)
+	{
+		<div class="alert alert-danger" role="alert">@error</div>
+	}
+	@if (!string.IsNullOrEmpty(newStaffEmail) && !string.IsNullOrEmpty(newStaffPassword))
+	{
+		<div class="alert alert-warning" role="alert">
+			<h5 class="alert-heading"><i class="bi bi-key me-2"></i>Temporary sign-in details</h5>
+			<p class="mb-2">Share these details securely with the new staff member. This password is shown only once.</p>
+			<dl class="row mb-0">
+				<dt class="col-sm-2">Email</dt>
+				<dd class="col-sm-10">@newStaffEmail</dd>
+				<dt class="col-sm-2">Temporary password</dt>
+				<dd class="col-sm-10"><code>@newStaffPassword</code></dd>
+			</dl>
+		</div>
+	}
+
+	<div class="card border-0 shadow-sm">
+		<div class="card-header bg-white border-0 pt-3 px-3 px-lg-4">
+			<div class="d-flex justify-content-between align-items-center">
+				<h5 class="fw-bold mb-0">Staff accounts</h5>
+				<span class="badge bg-primary-subtle text-primary">@Model.Count account(s)</span>
+			</div>
+		</div>
+		<div class="card-body p-0">
+			@if (Model.Count == 0)
+			{
+				<div class="text-center py-5 px-3">
+					<i class="bi bi-people display-6 text-muted"></i>
+					<h5 class="mt-3">No staff accounts yet</h5>
+					<p class="text-muted">Add a staff member to grant access to the administration workflow.</p>
+					<a asp-action="Create" class="btn btn-primary">Add staff member</a>
+				</div>
+			}
+			else
+			{
+				<div class="table-responsive">
+					<table class="table table-hover align-middle mb-0">
+						<thead class="table-light">
+							<tr>
+								<th class="ps-3 ps-lg-4">Staff member</th>
+								<th>Access</th>
+								<th>Status</th>
+								<th class="text-end pe-3 pe-lg-4">Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							@foreach (var staff in Model)
+							{
+								var isCurrentUser = staff.Id == currentUserId;
+								<tr>
+									<td class="ps-3 ps-lg-4">
+										<div class="fw-semibold">@staff.Name</div>
+										<div class="small text-muted">@staff.Email</div>
+										@if (isCurrentUser)
+										{
+											<span class="badge bg-light text-secondary border mt-1">You</span>
+										}
+									</td>
+									<td>@StaffRoleLabels.Describe(staff.Roles)</td>
+									<td>
+										@if (staff.IsActive)
+										{
+											<span class="badge bg-success-subtle text-success">Active</span>
+										}
+										else
+										{
+											<span class="badge bg-secondary-subtle text-secondary">Deactivated</span>
+										}
+									</td>
+									<td class="text-end pe-3 pe-lg-4">
+										@if (!staff.IsAdministrator && !isCurrentUser)
+										{
+											<div class="d-inline-flex flex-wrap justify-content-end gap-2">
+												<a asp-action="Edit" asp-route-id="@staff.Id" class="btn btn-sm btn-outline-primary">
+													<i class="bi bi-pencil me-1"></i>Roles
+												</a>
+												@if (staff.IsActive)
+												{
+													<form asp-action="Deactivate" asp-route-id="@staff.Id" method="post" class="d-inline"
+														  onsubmit="return confirm('Deactivate this staff account? The user will no longer be able to sign in.');">
+														<button type="submit" class="btn btn-sm btn-outline-danger">
+															<i class="bi bi-person-slash me-1"></i>Deactivate
+														</button>
+													</form>
+												}
+												else
+												{
+													<form asp-action="Reactivate" asp-route-id="@staff.Id" method="post" class="d-inline"
+														  onsubmit="return confirm('Reactivate this staff account?');">
+														<button type="submit" class="btn btn-sm btn-outline-success">
+															<i class="bi bi-person-check me-1"></i>Reactivate
+														</button>
+													</form>
+												}
+											</div>
+										}
+										else if (staff.IsAdministrator)
+										{
+											<span class="small text-muted">Managed outside staff access</span>
+										}
+										else
+										{
+											<span class="small text-muted">Your account</span>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</div>
+	</div>
+</div>

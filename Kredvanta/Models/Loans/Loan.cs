@@ -1,7 +1,9 @@
 ﻿
+using System.ComponentModel.DataAnnotations;
 using Kredvanta.Models.Applications;
 using Kredvanta.Models.Borrowers;
 using Kredvanta.Models.Common;
+using Kredvanta.Models.Contracts;
 using Kredvanta.Models.Enums;
 using Kredvanta.Models.Repayments;
 using static Kredvanta.Models.Enums.LendingEnums;
@@ -16,6 +18,10 @@ namespace Kredvanta.Models.Loans
         public Guid LoanApplicationId { get; set; }
 
         public LoanApplication LoanApplication { get; set; } = null!;
+
+        public Guid? LoanOfferId { get; set; }
+
+        public LoanOffer? LoanOffer { get; set; }
 
         public Guid BorrowerId { get; set; }
 
@@ -47,6 +53,9 @@ namespace Kredvanta.Models.Loans
         public decimal OutstandingBalance { get; set; }
 
         public string CurrencyCode { get; set; } = "KES";
+
+        [Timestamp]
+        public byte[] RowVersion { get; set; } = null!;
 
         public LoanStatus Status { get; set; }
             = LoanStatus.PendingDisbursement;

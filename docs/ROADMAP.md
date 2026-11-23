@@ -2,7 +2,7 @@
 
 ## 1. Project Vision
 
-Kredvanta aims to become a comprehensive digital microfinance management platform that simplifies borrower onboarding, loan processing, disbursement and repayment management.
+Kredvanta aims to become a comprehensive digital microfinance management platform that simplifies applicant onboarding, loan processing, disbursement and repayment management.
 
 The long-term vision is to provide an integrated lending platform that reduces reliance on traditional branch-based operations.
 
@@ -21,18 +21,18 @@ The long-term vision is to provide an integrated lending platform that reduces r
 - [x] Role-based authorization foundation.
 - [ ] Complete automated testing setup.
 
-### Phase 2: Borrower Management
+### Phase 2: Applicant Management
 
-**Focus:** Borrower registration and onboarding.
+**Focus:** Applicant registration and onboarding.
 
 - [x] Borrower entity design.
 - [x] Guarantor entity design.
 - [x] Borrower profile fields.
 - [x] Multi-step onboarding foundation.
 - [x] Borrower verification document model.
-- [ ] Complete and test borrower onboarding.
+- [ ] Complete and test applicant onboarding.
 - [ ] Complete document upload and review workflows.
-- [ ] Complete borrower profile management.
+- [ ] Complete applicant profile management.
 
 ### Phase 3: Loan Product Management
 
@@ -46,7 +46,7 @@ The long-term vision is to provide an integrated lending platform that reduces r
 
 ### Phase 4: Loan Application Management
 
-**Focus:** Borrower loan requests.
+**Focus:** Applicant loan requests.
 
 - [x] Loan application entity.
 - [x] Loan application document entity.
@@ -75,10 +75,10 @@ The long-term vision is to provide an integrated lending platform that reduces r
 
 - [x] Loan entity.
 - [x] Loan disbursement entity.
-- [ ] Implement loan creation after approval.
-- [ ] Complete disbursement workflows.
-- [ ] Implement transaction reference tracking.
-- [ ] Test disbursement validation.
+- [x] Create a loan and repayment schedule after a verified payout.
+- [x] Complete the finance disbursement workflow.
+- [x] Track unique transaction references and idempotent payout requests.
+- [ ] Add automated tests for disbursement validation.
 
 ### Phase 7: Repayment Management
 
@@ -99,7 +99,7 @@ The long-term vision is to provide an integrated lending platform that reduces r
 **Focus:** Operational visibility.
 
 - [ ] Complete administrative dashboard.
-- [ ] Implement borrower statistics.
+- [ ] Implement applicant statistics.
 - [ ] Implement loan portfolio summaries.
 - [ ] Implement repayment performance reports.
 - [ ] Implement financial reporting.
@@ -144,7 +144,7 @@ The long-term vision is to provide an integrated lending platform that reduces r
 
 Potential future improvements include:
 
-- Mobile-friendly borrower self-service portal.
+- Mobile-friendly applicant self-service portal.
 - Automated credit scoring.
 - Advanced financial analytics.
 - SMS notifications.

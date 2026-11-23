@@ -1,0 +1,72 @@
+@model Kredvanta.Models.Credit.ApplicantCreditPolicyPublication
+
+@{
+	ViewData["Title"] = Model.Title;
+	Layout = ViewBag.Layout;
+	var sections = new[]
+	{
+		("Purpose and scope", Model.PurposeAndScope),
+		("Eligibility and documents", Model.EligibilityAndDocuments),
+		("Assessment and decision", Model.AssessmentAndDecision),
+		("Pricing and offers", Model.PricingAndOffers),
+		("Repayment and complaints", Model.RepaymentAndComplaints),
+		("Personal information", Model.PersonalInformation),
+		("Important notice", Model.ImportantNotice)
+	};
+}
+
+<div class="container py-4">
+	<header class="mb-4">
+		<span class="text-uppercase text-muted small fw-semibold">Kings Microfinance</span>
+		<h1 class="h2 fw-bold mt-2 mb-1">@Model.Title</h1>
+		<div class="text-muted">Version @Model.VersionNumber</div>
+	</header>
+
+	@if (!Model.IsPublished)
+	{
+		<div class="alert alert-warning" role="alert">
+			<h2 class="h6 fw-bold">Draft - not yet approved</h2>
+			<p class="mb-0">This draft is provided for transparency while it is reviewed. It is not a loan offer, agreement, or evidence of regulatory approval. Confirmed terms are provided in each product disclosure and loan agreement.</p>
+		</div>
+	}
+	else
+	{
+		<div class="alert alert-info" role="status">
+			Version @Model.VersionNumber@(Model.EffectiveFrom is DateOnly effectiveFrom ? $" is effective from {effectiveFrom:dd MMM yyyy}." : " is currently in effect.")
+		</div>
+	}
+
+	<div class="card border-0 shadow-sm rounded-4 mb-4">
+		<div class="card-body p-4">
+			<p class="text-muted mb-0">This plain-language summary describes the application and assessment process. It does not disclose internal numerical underwriting thresholds.</p>
+		</div>
+	</div>
+
+	@foreach (var policySection in sections)
+	{
+		<section class="card border-0 shadow-sm rounded-4 mb-3">
+			<div class="card-body p-4">
+				<h2 class="h5 fw-bold">@policySection.Item1</h2>
+				<p class="mb-0" style="white-space: pre-line">@policySection.Item2</p>
+			</div>
+		</section>
+	}
+
+	<section class="card border-0 shadow-sm rounded-4 mt-4">
+		<div class="card-body p-4">
+			<h2 class="h5 fw-bold">Authoritative references</h2>
+			<p class="text-muted">These sources informed this draft. Their applicability and current legal status must be checked for the lender's legal entity and licence category. The 2025 CBK draft is listed for monitoring only, not as binding law.</p>
+			<ul class="mb-0">
+				@foreach (var reference in Model.References.OrderBy(reference => reference.Title))
+				{
+					<li class="mb-3">
+						<a href="@reference.Url" target="_blank" rel="noopener noreferrer">@reference.Title</a>
+						<div class="small text-muted">@reference.Description</div>
+					</li>
+				}
+			</ul>
+		</div>
+	</section>
+
+	<p class="small text-muted mt-4">Last updated @(Model.UpdatedAt?.ToLocalTime().ToString("dd MMM yyyy") ?? Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy"))</p>
+</div>
